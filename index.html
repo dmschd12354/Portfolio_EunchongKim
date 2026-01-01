@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eunchong Kim - Autonomous Driving Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0077EE;
+            --ego-color: #00ffcc;
+            --text-color: #eeeeee;
+            --warn-color: #ff3333;
+            --gold-color: #ffd700;
+            --glass-bg: rgba(11, 16, 38, 0.65);
+            --glass-border: rgba(0, 119, 238, 0.3);
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; 
+            background: #050810; 
+            font-family: 'Rajdhani', sans-serif; 
+            color: #fff;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        
+        /* --- UI Layer & HUD --- */
+        .ui-layer { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; pointer-events: none; padding: 40px; box-sizing: border-box; 
+        }
+
+        /* Scanline Effect (CRT Monitor Style) */
+        .ui-layer::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .hud-group { display: flex; flex-direction: column; gap: 5px; }
+        .hud-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+        .speed-val { font-size: 6rem; font-weight: 700; line-height: 0.8; color: var(--text-color); text-shadow: 0 0 10px rgba(0, 119, 238, 0.3); }
+        .speed-unit { font-size: 1.5rem; color: #888; margin-left: 10px; }
+        
+        .nav-box { margin-top: 20px; border-left: 4px solid var(--primary-color); padding-left: 15px; width: fit-content;}
+        .nav-header { font-size: 0.85rem; color: var(--primary-color); letter-spacing: 2px; font-weight: 700; margin-bottom: 5px; }
+        .nav-dist { font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .nav-text { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 600; color: #ccc; margin-bottom: 15px; }
+        .nav-sub-box { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; margin-top: 10px; }
+        .nav-sub-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-sub-text { font-size: 1rem; color: var(--ego-color); font-weight: 600; }
+
+        .bottom-bar { position: absolute; bottom: 40px; left: 40px; right: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; background: rgba(0,0,0,0.6); padding: 20px; border: 1px solid #333; border-radius: 4px; backdrop-filter: blur(5px); }
+        .data-item div:first-child { font-size: 0.8rem; color: #666; margin-bottom: 5px; }
+        .data-item div:last-child { font-size: 1.5rem; font-weight: 700; }
+        .highlight { color: var(--primary-color); }
+
+        /* Pulse Animation for Autopilot */
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px #00ffcc; }
+            50% { opacity: 0.5; text-shadow: 0 0 2px #00ffcc; }
+        }
+        .autopilot-status { color: var(--ego-color); animation: pulse-text 2s infinite; }
+
+        /* --- Menu Bar --- */
+        .fixed-nav-bar {
+            position: fixed; 
+            top: 25px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 100; 
+            pointer-events: auto;
+            
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            gap: 5px; 
+            padding: 8px 10px;
+            
+            background: rgba(10, 15, 30, 0.65);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 100px;
+            
+            box-shadow: 
+                0 4px 30px rgba(0, 0, 0, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05), 
+                0 0 20px rgba(0, 255, 204, 0.05);
+                
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .fixed-nav-bar:hover {
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(0, 255, 204, 0.15);
+            border-color: rgba(0, 255, 204, 0.2);
+        }
+
+        .nav-btn {
+            text-decoration: none; 
+            color: #b0b5c0; 
+            font-size: 0.85rem; 
+            font-weight: 600;
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            padding: 10px 24px;
+            border-radius: 100px; 
+            border: none;
+            background: transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn:hover { 
+            color: #fff; 
+            background: rgba(255, 255, 255, 0.1); 
+            text-shadow: 0 0 8px rgba(255,255,255,0.5);
+        }
+
+        .top-center-container {
+            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; z-index: 30; width: 100%; pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .name-main { font-size: 4.5rem; font-weight: 800; letter-spacing: 5px; text-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .name-sub { font-size: 1.4rem; color: var(--ego-color); letter-spacing: 1px; margin-top: 10px; text-shadow: 0 0 10px rgba(0,0,0,0.8); font-weight: 400; }
+
+        .scroll-hint {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            z-index: 20; text-align: center; pointer-events: none;
+            transition: opacity 0.3s ease;
+            background: linear-gradient(to bottom, var(--ego-color) 0%, rgba(0, 255, 204, 0.2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .scroll-icon { font-size: 1.5rem; animation: bounce 2s infinite; line-height: 0.8; }
+        .scroll-icon:nth-child(2) { margin-top: -10px; animation-delay: 0.2s; }
+
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+
+        #portfolio-scroll { position: relative; z-index: 15; width: 100%; }
+        .spacer-vh { height: 100vh; width: 100%; pointer-events: none; }
+
+        .content-section {
+            max-width: 900px; margin: 0 auto 100px auto; padding: 0 20px;
+            scroll-margin-top: 120px;
+        }
+
+        .section-title {
+            font-size: 2rem; color: var(--ego-color); margin-bottom: 25px;
+            border-bottom: 2px solid var(--primary-color); display: inline-block; padding-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0, 119, 238, 0.4);
+        }
+        .compact-header .section-title { margin-bottom: 15px; }
+
+        /* --- Enhanced Glassmorphism Cards --- */
+        .cv-card {
+            background: rgba(11, 16, 38, 0.6);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(0, 119, 238, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            cursor: pointer; position: relative; overflow: hidden;
+            opacity: 0;
+            transform: translateY(80px) scale(0.9);
+            transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s ease-out;
+        }
+
+        /* Gradient Border Effect */
+        .cv-card::before {
+            content: "";
+            position: absolute; inset: 0; border-radius: 12px; padding: 1px;
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 119, 238, 0.1), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .compact-card { padding-top: 20px; cursor: default; }
+
+        .cv-card.animate-in {
+            animation: popUpElastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes popUpElastic {
+            0% { opacity: 0; transform: translateY(80px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .cv-card.animate-in:hover:not(.compact-card) {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 255, 204, 0.15);
+        }
+
+        .cv-card:not(.compact-card)::after {
+            content: 'Click to View Details →';
+            position: absolute; bottom: 20px; right: 20px;
+            font-size: 0.8rem; color: var(--ego-color); 
+            opacity: 0; transform: translateX(-10px);
+            transition: all 0.15s ease-out;
+            font-weight: 700;
+        }
+        .cv-card:hover::after { opacity: 1; transform: translateX(0); }
+
+        .hero-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(11, 16, 38, 0.85) 100%);
+        }
+        .hero-card::before {
+            background: linear-gradient(135deg, var(--gold-color), transparent);
+        }
+        .hero-badge {
+            position: absolute; top: 25px; right: -35px; background: var(--gold-color); color: #000;
+            font-weight: 800; padding: 8px 40px; transform: rotate(45deg); z-index: 2;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.9rem;
+        }
+
+        .cv-item { margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
+        .cv-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+
+        .cv-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+        .cv-main-text { font-size: 1.4rem; font-weight: 700; }
+        .cv-date { font-size: 0.9rem; color: #aaa; }
+        .cv-sub-text { font-size: 1.1rem; color: var(--primary-color); font-weight: 500; display: block; margin-bottom: 5px; }
+        .cv-summary { color: #ccc; font-size: 0.95rem; font-family: 'Noto Sans KR'; }
+        .cv-desc { margin-top: 10px; color: #ccc; font-size: 0.95rem; font-family: 'Noto Sans KR'; line-height: 1.6; }
+        .cv-desc ul { margin: 5px 0 0 20px; padding: 0; }
+        
+        .thesis-title { font-style: italic; color: #aaa; font-size: 0.9rem; margin-top: 5px; display: block; }
+        .thesis-title::before { content: "Thesis: "; font-weight: bold; color: #666; font-style: normal; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: #111625; border: 1px solid var(--ego-color);
+            width: 90%; max-width: 900px; max-height: 85vh;
+            border-radius: 15px; padding: 40px;
+            overflow-y: auto; position: relative;
+            transform: scale(0.9); transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.1);
+        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        .modal-close {
+            position: absolute; top: 20px; right: 25px;
+            font-size: 1.5rem; color: #888; cursor: pointer; transition: 0.2s;
+        }
+        .modal-close:hover { color: #fff; transform: rotate(90deg); }
+
+        .modal-title { font-size: 1.8rem; color: #fff; margin-bottom: 5px; font-weight: 700; border-bottom: none; }
+        .modal-role { color: var(--ego-color); font-size: 1.1rem; margin-bottom: 20px; display: block; font-weight: 600; }
+        .modal-body { font-family: 'Noto Sans KR'; line-height: 1.8; color: #ddd; }
+        .modal-body ul { margin-left: 20px; margin-bottom: 20px; }
+        .modal-body h4 { color: var(--primary-color); margin-top: 30px; margin-bottom: 15px; font-size: 1.1rem; border-left: 3px solid var(--primary-color); padding-left: 10px; }
+
+        /* Timeline for Achievements (Enhanced) */
+        .achievement-track {
+            display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 10px; padding-left: 25px; position: relative;
+        }
+        .track-item {
+            display: flex; align-items: center; gap: 15px; padding: 12px;
+            background: rgba(255,255,255,0.03); border-radius: 6px; position: relative;
+        }
+        .track-item::before {
+            content: ''; position: absolute; left: -32px; top: 50%; transform: translateY(-50%);
+            width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        .track-step {
+            font-weight: 700; color: #666; font-size: 0.9rem; min-width: 80px;
+        }
+        .track-result { color: #fff; font-weight: 500; }
+        
+        .track-item.winner { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold-color); }
+        .track-item.winner::before { background: var(--gold-color); box-shadow: 0 0 15px var(--gold-color); }
+        .track-item.winner .track-step { color: var(--gold-color); }
+        .track-item.winner .track-result { color: var(--gold-color); font-weight: 800; font-size: 1.1rem; }
+
+        /* --- Gallery Styles --- */
+        .gallery-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            background: #000;
+        }
+
+        .gallery-item img { width: 100%; display: block; transition: transform 0.3s ease; }
+        .gallery-item:hover img { transform: scale(1.02); }
+
+        .gallery-caption-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            padding: 25px 20px 15px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+            color: #fff; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1.1rem; pointer-events: none;
+        }
+        .gallery-caption-overlay span {
+            display: block; font-size: 0.8rem; color: var(--ego-color); font-weight: 500;
+            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* --- Video Styles --- */
+        .video-wrapper { margin: 20px 0 30px 0; width: 100%; }
+        .video-container {
+            position: relative; padding-bottom: 56.25%; height: 0;
+            overflow: hidden; border-radius: 12px;
+            border: 1px solid var(--glass-border); background: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* --- Tags (Reverted to Original) --- */
+        .tag { 
+            display: inline-block; padding: 4px 10px; margin: 2px; 
+            border-radius: 4px; 
+            background: rgba(0, 119, 238, 0.2); 
+            border: 1px solid var(--primary-color); 
+            font-size: 0.8rem; color: var(--ego-color); 
+        }
+        
+        .lang-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .lang-name { font-weight: 600; color: #eee; }
+        .lang-level { color: #888; font-size: 0.9rem; }
+        
+        .contact-link { color: var(--ego-color); text-decoration: none; border-bottom: 1px dashed var(--ego-color); transition: 0.3s; }
+        .contact-link:hover { color: #fff; border-bottom-style: solid; text-shadow: 0 0 8px var(--ego-color); }
+        .footer-spacer { height: 200px; }
+
+        /* --- Mobile Responsive --- */
+        @media (max-width: 768px) {
+            .ui-layer { padding: 20px; }
+            .speed-val { font-size: 3.5rem; }
+            .nav-box { display: none; } /* 모바일에서 공간 확보를 위해 네비게이션 숨김 */
+            .bottom-bar { display: none; }
+            
+            .fixed-nav-bar { 
+                width: 85%; 
+                bottom: 30px; top: auto; /* 상단에서 하단으로 이동 */
+                background: rgba(10, 15, 30, 0.9);
+                padding: 10px;
+                gap: 0;
+                justify-content: space-evenly;
+            }
+            .nav-btn { padding: 8px 12px; font-size: 0.75rem; }
+            
+            .name-main { font-size: 2.8rem; letter-spacing: 2px; }
+            .name-sub { font-size: 1.1rem; }
+            
+            .content-section { padding: 0 15px; margin-bottom: 80px; }
+            .modal-content { width: 95%; padding: 25px; margin: 0; max-height: 80vh; }
+        }
+
+        /* --- [NEW] Right Side Floating CV Widget --- */
+        .hero-side-cv {
+            position: fixed;
+            top: 50%;
+            right: 60px; /* 화면 오른쪽 여백 */
+            transform: translateY(-50%);
+            z-index: 90; /* 캔버스보다 위, 모달보다 아래 */
+            text-decoration: none;
+            
+            /* 처음엔 안 보이다가 스르륵 등장 */
+            opacity: 0;
+            animation: slideInRight 1s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.5s forwards;
+        }
+
+        .cv-glass-panel {
+            background: rgba(5, 8, 16, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            
+            /* 우측에 포인트 라인 (파란색) */
+            border-right: 3px solid var(--primary-color);
+            
+            padding: 25px 35px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* 텍스트 오른쪽 정렬 */
+            gap: 5px;
+            
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+        }
+
+        /* 작은 라벨 (Curriculum Vitae) */
+        .cv-label-small {
+            color: var(--primary-color);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            transition: color 0.3s;
+        }
+
+        /* 큰 텍스트 (DOWNLOAD) */
+        .cv-label-large {
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .cv-icon-box {
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        /* --- Hover Effects (마우스 올렸을 때) --- */
+        .hero-side-cv:hover .cv-glass-panel {
+            background: rgba(5, 8, 16, 0.85);
+            /* 테두리 색상을 민트색(Ego Color)으로 변경 */
+            border-color: rgba(0, 255, 204, 0.3);
+            border-right-color: var(--ego-color);
+            
+            /* 왼쪽으로 살짝 튀어나오는 효과 */
+            transform: translateX(-15px);
+            box-shadow: -10px 0 50px rgba(0, 255, 204, 0.1);
+        }
+
+        .hero-side-cv:hover .cv-label-small {
+            color: var(--ego-color);
+            text-shadow: 0 0 5px var(--ego-color);
+        }
+
+        .hero-side-cv:hover .cv-icon-box {
+            transform: translateX(5px) scale(1.1);
+            color: var(--ego-color);
+            opacity: 1;
+        }
+
+        /* 등장 애니메이션 정의 */
+        @keyframes slideInRight {
+            0% { opacity: 0; transform: translate(100px, -50%); }
+            100% { opacity: 1; transform: translate(0, -50%); }
+        }
+
+        /* 모바일에서는 가림 (화면이 좁으므로) */
+        @media (max-width: 1024px) {
+            .hero-side-cv { display: none; }
+        }
+    </style>
+    
+    <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <div class="hud-group">
+            <span class="hud-label">Velocity</span>
+            <div><span class="speed-val" id="speed">0</span><span class="speed-unit">km/h</span></div>
+            
+            <div class="nav-box">
+                <div class="nav-header">DESTINATION</div>
+                <div class="nav-dist">LEVEL 5</div>
+                <div class="nav-text">Full Autonomy</div>
+                
+                <div class="nav-sub-box">
+                    <div class="nav-sub-label">CURRENT STATUS</div>
+                    <div class="nav-sub-text">M.S. Researcher @ UNIST</div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-bar">
+            <div class="data-grid">
+                <div class="data-item"><div>REMAINING</div><div>12.4 km</div></div>
+                <div class="data-item"><div>ETA</div><div class="highlight">18:45</div></div>
+                <div class="data-item"><div>DRIVE MODE</div><div class="autopilot-status">AUTOPILOT</div></div>
+            </div>
+        </div>
+    </div>
+
+    <a href="Eunchong_Kim_CV.pdf" target="_blank" class="hero-side-cv">
+        <div class="cv-glass-panel">
+            <span class="cv-label-small">Curriculum Vitae</span>
+            <span class="cv-label-large">
+                DOWNLOAD
+                <i class="fas fa-file-pdf cv-icon-box"></i>
+            </span>
+        </div>
+    </a>
+
+    <nav class="fixed-nav-bar">
+        <a href="#projects" class="nav-btn">Projects</a>
+        <a href="#education" class="nav-btn">Education</a>
+        <a href="#experience" class="nav-btn">Experiences</a>
+        <a href="#publications" class="nav-btn">Publications</a>
+        <a href="#skills" class="nav-btn">Skills</a>
+        <a href="#about" class="nav-btn">Contact</a>
+    </nav>
+    
+    <div class="top-center-container" id="hero-header">
+        <div class="name-main">EUNCHONG KIM</div>
+        <div class="name-sub">AI Researcher & Developer</div>
+    </div>
+
+    <div class="scroll-hint" id="scrollHint">
+        <div class="scroll-icon"><i class="fas fa-chevron-down"></i></div>
+        <div class="scroll-icon"><i class="fas fa-chevron-down"></i></div>
+    </div>
+
+    <main id="portfolio-scroll">
+        <div class="spacer-vh"></div>
+        
+        <section class="content-section" id="projects">
+            <h2 class="section-title">KEY PROJECTS</h2>
+            <div id="project-list">
+            </div>
+        </section>
+
+        <section class="content-section compact-header" id="education">
+            <div class="cv-card compact-card">
+                <h2 class="section-title">EDUCATION</h2>
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">UNIST (Ulsan National Institute of Science and Technology)</span>
+                        <span class="cv-date">Exp. Feb. 2026</span>
+                    </div>
+                    <span class="cv-sub-text">M.S. in Artificial Intelligence</span>
+                    <div class="cv-desc">
+                        <ul>
+                            <li><strong>Advisor:</strong> Prof. Jeong Hwan Jeon (Robotics and Mobility Lab).</li>
+                            <li><strong>GPA:</strong> 4.03 / 4.3.</li>
+                        </ul>
+                        <span class="thesis-title">End-to-End Autonomous Driving: Deployment-Oriented and Rule-Conformant Design</span>
+                    </div>
+                </div>
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Jacobs University Bremen (Constructor University)</span>
+                        <span class="cv-date">Jun. 2023</span>
+                    </div>
+                    <span class="cv-sub-text">B.Sc. in Robotics and Intelligent Systems</span>
+                    <div class="cv-desc">
+                        <ul>
+                            <li><strong>Location:</strong> Bremen, Germany.</li>
+                            <li><strong>Advisor:</strong> Prof. Francesco Maurelli.</li>
+                            <li><strong>Honors:</strong> Major Representative, Merit-based Scholarship (€5,000 per year).</li>
+                            <li><strong>GPA:</strong> 1.52 (German Scale) ≈ 3.5 / 4.0.</li>
+                        </ul>
+                        <span class="thesis-title">Event-Based Motion Segmentation and Stereo Feature Matching in Highly Cluttered Environments</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section compact-header" id="experience">
+            <div class="cv-card compact-card">
+                <h2 class="section-title">EXPERIENCE</h2>
+                
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Reviewer</span>
+                        <span class="cv-date">Nov. 2025</span>
+                    </div>
+                    <span class="cv-sub-text">2026 IEEE Intelligent Vehicles Symposium (IV)</span>
+                    <div class="cv-desc">
+                         Academic Referee / Reviewer activity.
+                    </div>
+                </div>
+
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Teaching Assistant</span>
+                        <span class="cv-date">Spring 2024, Spring 2025</span>
+                    </div>
+                    <span class="cv-sub-text">UNIST</span>
+                    <div class="cv-desc">
+                        <ul>
+                            <li>AI Programming I (Python).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Working Student</span>
+                        <span class="cv-date">Oct. 2022 - Jun. 2023</span>
+                    </div>
+                    <span class="cv-sub-text">WasteAnt GmbH</span>
+                    <div class="cv-desc">
+                        <ul>
+                            <li>Developed event-based vision algorithms for waste management.</li>
+                            <li>Collaborated on real-world deployment in incineration plants.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Research Intern</span>
+                        <span class="cv-date">Jun. 2022 - Aug. 2022</span>
+                    </div>
+                    <span class="cv-sub-text">Robotics and Mobility Lab, UNIST</span>
+                    <div class="cv-desc">
+                        Research on neuromorphic sensor applications in robotics.
+                    </div>
+                </div>
+
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Teaching Assistant</span>
+                        <span class="cv-date">2021 - 2023</span>
+                    </div>
+                    <span class="cv-sub-text">Jacobs University Bremen</span>
+                    <div class="cv-desc">
+                        <ul>
+                            <li>Algorithms and Data Structures (C++)</li>
+                            <li>Programming in C/C++</li>
+                            <li>Embedded Systems</li>
+                            <li>Introduction to Robotics and Intelligent Systems Lab (Arduino)</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="content-section compact-header" id="publications">
+            <div class="cv-card compact-card">
+                <h2 class="section-title">PUBLICATIONS & AWARDS</h2>
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Deployment-Oriented End-to-End Autonomous Driving: Enhancing Closed-Loop Stability with a Lightweight Camera-Only Framework</span>
+                        <span class="cv-date">Under Review</span>
+                    </div>
+                    <div class="cv-desc">
+                        Submitted to <strong>IEEE IV 2026 (1st Author)</strong>.
+                    </div>
+                </div>
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Rule-Conformant End-to-End Autonomous Driving: Safer Intersection Behavior via Enforced Cue Representation</span>
+                        <span class="cv-date">Under Review</span>
+                    </div>
+                    <div class="cv-desc">
+                        Submitted to <strong>IEEE IV 2026 (1st Author)</strong>.
+                    </div>
+                </div>
+                <div class="cv-item">
+                    <div class="cv-header">
+                        <span class="cv-main-text">Excellence Award | AI Tech Open Workshop</span>
+                        <span class="cv-date">Apr. 2025 - Sep. 2025</span>
+                    </div>
+                    <div class="cv-desc">
+                        UNIST AI Tech Open Workshop Poster Session Excellence Award (₩2,500,000 Reward).
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section compact-header" id="skills">
+            <div class="cv-card compact-card">
+                <h2 class="section-title">SKILLS & LANGUAGES</h2>
+                
+                <div class="cv-item">
+                    <span class="cv-sub-text">Programming & Frameworks</span>
+                    <div style="margin-top: 10px;">
+                        <span class="tag">VS Code</span>
+                        <span class="tag">Python</span><span class="tag">C++</span><span class="tag">PyTorch</span>
+                        <span class="tag">ROS</span><span class="tag">OpenCV</span><span class="tag">NumPy</span>
+                        <span class="tag">Matplotlib</span><span class="tag">Matlab</span>
+                    </div>
+                </div>
+                
+                <div class="cv-item">
+                    <span class="cv-sub-text">Tools & Platforms</span>
+                    <div style="margin-top: 10px;">
+                        <span class="tag">Docker</span><span class="tag">Git</span><span class="tag">MORAI Simulator</span><span class="tag">NVIDIA Jetson Orin</span>
+                    </div>
+                </div>
+
+                <div class="cv-item">
+                    <span class="cv-sub-text">Languages</span>
+                    <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="lang-row">
+                                <span class="lang-name">Korean</span>
+                                <span class="lang-level">Native</span>
+                            </div>
+                            <div style="width: 100%; height: 4px; background: #333; border-radius: 2px;">
+                                <div style="width: 100%; height: 100%; background: var(--ego-color); border-radius: 2px; box-shadow: 0 0 5px var(--ego-color);"></div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="lang-row">
+                                <span class="lang-name">English</span>
+                                <span class="lang-level">Native</span>
+                            </div>
+                            <div style="width: 100%; height: 4px; background: #333; border-radius: 2px;">
+                                <div style="width: 100%; height: 100%; background: var(--primary-color); border-radius: 2px; box-shadow: 0 0 5px var(--primary-color);"></div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="lang-row">
+                                <span class="lang-name">German</span>
+                                <span class="lang-level">Basic</span>
+                            </div>
+                            <div style="width: 100%; height: 4px; background: #333; border-radius: 2px;">
+                                <div style="width: 30%; height: 100%; background: #888; border-radius: 2px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section compact-header" id="about">
+            <div class="cv-card compact-card">
+                <h2 class="section-title">CONTACT</h2>
+                <div class="cv-desc" style="font-size: 1.1rem; text-align: center; padding: 20px 0;">
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:ekim01@unist.ac.kr" class="contact-link">ekim01@unist.ac.kr</a></p>
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:justinkim7577@gmail.com" class="contact-link">justinkim7577@gmail.com</a></p>
+                    <p><i class="fas fa-phone"></i> 010-7577-0596</p>
+
+                </div>
+            </div>
+        </section>
+
+        <div class="footer-spacer"></div>
+    </main>
+
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></div>
+            <div id="modal-body-content">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const projects = [
+            {
+                id: 1,
+                title: "2025 Hyundai Motor Group Autonomous Driving Challenge",
+                date: "Oct. 2024 - Sep. 2025",
+                role: "Team Leader | 1st Place (Winner)",
+                summary: "Camera-only deployment-oriented End-to-End Autonomous Driving: From data collection to closed-Loop driving.",
+                isHero: true,
+                badge: "WINNER",
+                video: "https://www.youtube.com/watch?v=HlTL7tkNh6M",
+                details: `
+                    <h4>Overview</h4>
+                    <p>Development of a Camera-Only Deployment-Oriented End-to-End Autonomous Driving Model and the entire pipeline from data collection (in MORAI sim.) to closed-loop validation.</p>
+                    
+                    <h4>Competition Progression</h4>
+                    <div class="achievement-track">
+                        <div class="track-item">
+                            <span class="track-step">Round 1</span>
+                            <span class="track-result">Qualifiers (16 Teams → 8 Teams)</span>
+                        </div>
+                        <div class="track-item">
+                            <span class="track-step">Round 1</span>
+                            <span class="track-result">Main Round (8 Teams → 6 Teams) (3rd Place)</span>
+                        </div>
+                        <div class="track-item">
+                            <span class="track-step">Round 2</span>
+                            <span class="track-result">Qualifiers (6 Teams → 4 Teams)</span>
+                        </div>
+                        <div class="track-item winner">
+                            <span class="track-step"><i class="fas fa-trophy"></i> FINAL</span>
+                            <span class="track-result">Winner (1st Place among 4 Finalists)</span>
+                        </div>
+                    </div>
+
+                    <h4>Key Achievements</h4>
+                    <ul>
+                        <li><strong>Performance:</strong> Achieved superior driving score compared to baseline in closed-loop evaluation.</li>
+                        <li><strong>Rewards:</strong> Total 30,000,000 won Prize, Recruitment benefits, China AD Tech Tour.</li>
+                        <li><strong>Optimization:</strong> Achieved 16Hz real-time inference on NVIDIA Jetson AGX Orin.</li>
+                    </ul>
+
+                    <h4>Technical Details</h4>
+                    <ul>
+                        <li><strong>Robustness:</strong> Applied <strong>Imitation Learning + DAgger</strong> (Dataset Aggregation) to effectively handle covariate shift and out-of-distribution scenarios.</li>
+                        <li><strong>Data Pipeline:</strong> Collected and refined 24-hour scale driving data using multi-view cameras, IMU, and GPS.</li>
+                        <li><strong>Consistency enhancement:</strong> Developed specialized modules and loss functions to resolve prediction inconsistency between planning and control heads.</li>
+                        <li><strong>Labeling Policy:</strong> Established a data labeling policy to enhance closed-loop driving stability.</li>
+                    </ul>
+
+                    <h4>Tech Stack</h4>
+                    <div>
+                        <span class="tag">Python</span> <span class="tag">PyTorch</span> <span class="tag">Matplotlib</span> <span class="tag">NumPy</span> <span class="tag">ROS</span> <span class="tag">MORAI Sim</span> <span class="tag">NVIDIA Jetson Orin</span> 
+                    </div>
+
+                    <h4>Gallery</h4>
+                    <div class="gallery-grid">
+                        <div class="gallery-item">
+                            <img src="images/E2E_award.png" alt="Award Ceremony" style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span style="color: var(--gold-color);">🏆 1st Place Winner</span>
+                                Award Ceremony with Hyundai Motor Group
+                            </div>
+                        </div>
+
+                        <div class="gallery-item">
+                            <img src="images/E2E_model_output.png" alt="Model Prediction" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div class="gallery-caption-overlay">
+                                <span>Visualization</span>
+                                E2E Model Trajectory & Control Command Prediction
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" style="height: 310px;">
+                            <img src="images/E2E_baseline.png" alt="Performance Table" style="width: 100%; height: 280px; object-fit: cover; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Benchmark</span>
+                                Closed-loop Evaluation: Baselines vs. Proposed Model
+                            </div>
+                        </div>
+
+                        <div class="gallery-item" style="height: 480px;">
+                            <img src="images/E2E_scenarios.png" alt="Driving Scenario" style="width: 100%; height: 463px; object-fit: cover; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Test Case</span>
+                                Examples of Urban Driving Scenarios
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+             {
+                id: 2,
+                title: "MTKD-based Domain Adaptive Real-time Human Detection",
+                date: "Aug. 2023 - Dec. 2023",
+                role: "Collaborative Researcher",
+                summary: "Multi-domain knowledge into a single real-time student model.",
+                isHero: false,
+                details: `
+                    <h4>Overview</h4>
+                    <p>Multi-Teacher Knowledge Distillation based Pedestrian Detection.</p>
+                    <h4>Key Achievements</h4>
+                    <ul>
+                        <li>Improved detection performance by over 16% mAP compared to fine-tuning.</li>
+                        <li>Optimized inference speed and generalization for diverse environments.</li>
+                    </ul>
+                    <h4>Technical Details</h4>
+                    <ul>
+                        <li><strong>MTKD:</strong> Integrated knowledge from 3 teachers, specialized in each domain (Indoor, Outdoor, Crowd).</li>
+                        <li><strong>Stability:</strong> Guided the student to follow the more accurate distribution when teachers conflict.</li>
+                        <li><strong>Efficiency:</strong> Built a semi-automated data labeling pipeline using Pseudo-labeling.</li>
+                    </ul>
+                    <h4>Tech Stack</h4>
+                    <div>
+                        <span class="tag">Python</span> <span class="tag">PyTorch</span> <span class="tag">Knowledge Distillation</span>
+                    </div>
+
+                    <h4>Gallery</h4>
+                    <div class="gallery-grid">
+                        
+                        <div class="gallery-item">
+                            <img src="images/MTKD_data.png" alt="Data" style="width: 100%; height: 200px; object-fit: cover; object-position: top; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Collected and Public dataset</span>
+                                Indoor, ECP, CrowdHuman dataset
+                            </div>
+                        </div>
+
+                        <div class="gallery-item">
+                            <img src="images/MTKD_model.png" alt="Data" style="width: 100%; height: 95%; object-fit: cover; object-position: top; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>MRKD</span>
+                                Model Architecture
+                            </div>
+                        </div>
+
+                    </div>
+
+                `
+            },
+            {
+                id: 3,
+                title: "BEV-based Lane Detection",
+                date: "Dec. 2023 - Feb. 2024",
+                role: "Individual Researcher",
+                summary: "Vision-based lane detection framework.",
+                isHero: false,
+                video: "https://www.youtube.com/watch?v=KpCTeawm7qg",
+                details: `
+                    <h4>Overview</h4>
+                    <p>Vision-based Lane Detection Framework (Rule-based).</p>
+                    <h4>Key Achievements</h4>
+                    <ul>
+                        <li><strong>Full-stack pipeline:</strong> Calibration, Pre-processing, Detection, and Tracking</li>
+                        <li><strong>Robustness:</strong> Ensured stable recognition under challenging conditions (faded lanes, irregular lighting/shadows).</li>
+                        <li><strong>Tracking Continuity:</strong> Implemented robust tracking to maintain performance even in occlusions by obstacles.</li>
+                    </ul>
+                    <h4>Technical Details</h4>
+                    <ul>
+                        <li><strong>Preprocessing:</strong> Used Logistic Function based contrast enhancement and Otsu binarization.</li>
+                        <li><strong>Transformation:</strong> Implemented IPM (Inverse Perspective Mapping) for BEV transformation.</li>
+                        <li><strong>Curved Road Adaptation</strong>: Achieved precise curve approximation using IPM (Bird's Eye View) transformation and segmental partitioning techniques.</li>
+                        <li><strong>Tracking:</strong> Kalman Filter based position correction and B-Spline path generation.</li>
+                    </ul>
+                    <h4>Tech Stack</h4>
+                    <div>
+                        <span class="tag">Python</span> <span class="tag">OpenCV</span>
+                    </div>                    
+                    
+                    <h4>Gallery</h4>
+                    <div class="gallery-grid">
+                        
+                        <div class="gallery-item">
+                            <img src="images/lane.png" alt="Data" style="width: 100%; height: 340px; object-fit: cover; object-position: top; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Monitoring</span>
+                                Pre-processed & Lane Detection Result
+                            </div>
+                        </div>
+
+                    </div>
+                `
+            },
+            {
+                id: 4,
+                title: "Event Camera-based Motion Segmentation",
+                date: "Jan. 2023 - Jun. 2023",
+                role: "Collaborative Researcher (WasteAnt GmbH)",
+                summary: "Motion segmentation pipeline for high-density environments.",
+                isHero: false,
+                details: `
+                    <h4>Overview</h4>
+                    <p>Motion segmentation algorithm for precise detection of anomalous waste in an incineration plant.</p>
+                    <h4>Key Achievements</h4>
+                    <ul>
+                        <li>Achieved Accuracy 73.65%, Recall 72.15% in high-density waste drop environments.</li>
+                        <li>Overcame limitations of separating adjacent objects moving in similar directions.</li>
+                    </ul>
+                    <h4>Technical Details</h4>
+                    <ul>
+                        <li><strong>Motion Compensation:</strong> Object motion extraction via event warping variance optimization.</li>
+                        <li><strong>Clustering:</strong> Double clustering pipeline (K-Means + DBSCAN) for noise robustness.</li>
+                        <li><strong>Fusion:</strong> Event-RGB Homography estimation and result projection.</li>
+                    </ul>
+                    <h4>Tech Stack</h4>
+                    <div>
+                        <span class="tag">Prophesee Event Camera</span> <span class="tag">Python</span> <span class="tag">OpenCV</span>
+                    </div>
+
+                    <h4>Gallery</h4>
+                    <div class="gallery-grid">
+                        
+                        <div class="gallery-item">
+                            <img src="images/motion.png" alt="Data" style="width: 100%; height: 100%; object-fit: cover; object-position: top; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Monitoring</span>
+                                Pre-processed & Lane Detection Result
+                            </div>
+                        </div>
+
+                    </div>
+                `
+            },
+            {
+                id: 5,
+                title: "Real-time Vehicle Tracking for Highway Surveillance System",
+                date: "Jun. 2022 - Aug. 2022",
+                role: "Research Intern",
+                summary: "Vehicle tracking using asynchronous event data.",
+                isHero: false,
+                details: `
+                    <h4>Overview</h4>
+                    <p>Event-based vehicle tracking in highway surveillance system.</p>
+                    <h4>Key Achievements</h4>
+                    <ul>
+                        <li>Overcame motion blur limitations of RGB cameras for high-speed tracking.</li>
+                        <li>Developed a low-cost tracking algorithm suitable for surveillance systems.</li>
+                    </ul>
+                    <h4>Technical Details</h4>
+                    <ul>
+                        <li><strong>Clustering:</strong> Asynchronous stream clustering based on search radius.</li>
+                        <li><strong>State Estimation:</strong> EMA filter applied for precise position/velocity/size estimation.</li>
+                        <li><strong>System:</strong> Modular design separating tracking and visualization nodes.</li>
+                    </ul>
+                    <h4>Tech Stack</h4>
+                    <div>
+                        <span class="tag">C++</span> <span class="tag">ROS</span> <span class="tag">Neuromorphic Sensor</span>
+                    </div>
+
+                    <h4>Gallery</h4>
+                    <div class="gallery-grid">
+                        
+                        <div class="gallery-item">
+                            <img src="images/tracking.png" alt="Data" style="width: 100%; height: 100%; object-fit: cover; object-position: top; object-position: top;">
+                            <div class="gallery-caption-overlay">
+                                <span>Visualization</span>
+                                Raw event data & Tracking Result
+                            </div>
+                        </div>
+
+                    </div>
+                `
+            },
+            
+        ];
+
+        const projectContainer = document.getElementById('project-list');
+        projects.forEach((proj, index) => {
+            const card = document.createElement('div');
+            card.className = `cv-card ${proj.isHero ? 'hero-card' : ''}`;
+            card.onclick = () => openModal(index);
+            let badgeHtml = proj.isHero ? `<div class="hero-badge">${proj.badge}</div>` : '';
+            card.innerHTML = `
+                ${badgeHtml}
+                <div class="cv-item" style="border:none; margin:0; padding:0;">
+                    <div class="cv-header">
+                        <span class="cv-main-text" style="${proj.isHero ? 'color:var(--gold-color);' : ''}">${proj.title}</span>
+                        <span class="cv-date">${proj.date}</span>
+                    </div>
+                    <span class="cv-sub-text" style="${proj.isHero ? 'color:#fff;' : ''}">${proj.role}</span>
+                    <div class="cv-summary">
+                        ${proj.summary}
+                    </div>
+                </div>
+            `;
+            projectContainer.appendChild(card);
+        });
+
+        const modal = document.getElementById('projectModal');
+        const modalBody = document.getElementById('modal-body-content');
+
+        function openModal(index) {
+            const p = projects[index];
+            
+            let videoSection = '';
+            if (p.video) {
+                let videoId = '';
+                if (p.video.includes('v=')) {
+                    videoId = p.video.split('v=')[1].split('&')[0];
+                } else if (p.video.includes('youtu.be/')) {
+                    videoId = p.video.split('youtu.be/')[1].split('?')[0];
+                }
+
+                if (videoId) {
+                    videoSection = `
+                        <h4>Project Video</h4>
+                        <div class="video-wrapper">
+                            <div class="video-container">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${videoId}" 
+                                    title="YouTube video player" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            modalBody.innerHTML = `
+                <div class="cv-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px;">
+                    <div class="modal-title">${p.title}</div>
+                    <div class="cv-date">${p.date}</div>
+                </div>
+                <span class="modal-role">${p.role}</span>
+                <div class="modal-body">
+                    ${videoSection}
+                    ${p.details}
+                </div>
+            `;
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        window.closeModal = function() {
+            modal.classList.remove('open');
+            document.body.style.overflow = ''; 
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const cards = entry.target.querySelectorAll('.cv-card');
+                    cards.forEach((card, index) => {
+                        setTimeout(() => {
+                            card.classList.add('animate-in');
+                        }, index * 150);
+                    });
+                }
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.content-section').forEach(sec => observer.observe(sec));
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        const CONFIG = {
+            egoColor: 0x00ffcc, 
+            pathColor: 0x0077EE, 
+            bgColor: 0x050810, 
+            drivableColor: 0x3a4b66, 
+            outerRoadColor: 0x151b2e,
+            fogColor: 0x050810,
+            laneColor: 0xaaaaaa,
+            buildingColor: 0x333344,
+            propColorDark: 0x1a1a1a,
+            propColorLight: 0xaaaaaa,
+            neonBlue: 0x0088ff,
+            neonOrange: 0xffaa00,
+            wireColor: 0x111111,
+            benchColor: 0x664422    
+        };
+
+        let scene, camera, renderer;
+        let egoGroup, pathLine;
+        let trafficCars = []; 
+        let pedestrians = [];
+        let curve;
+        let speedLines;
+        let camPosIndex = 0;
+        
+        const defaultSpeed = 0.0004; 
+        let currentSpeed = defaultSpeed;
+
+        let trafficLights = []; 
+        let redLightMat, greenLightMat;
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.bgColor);
+            scene.fog = new THREE.FogExp2(CONFIG.fogColor, 0.0035); 
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x505577, 1.8); 
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xaaccff, 1.5); 
+            directionalLight.position.set(0, 20, 10);
+            scene.add(directionalLight);
+
+            redLightMat = new THREE.MeshLambertMaterial({ color: 0x330000, emissive: 0xff0000, emissiveIntensity: 3.0 });
+            greenLightMat = new THREE.MeshLambertMaterial({ color: 0x003300, emissive: 0x00ff00, emissiveIntensity: 0.0 });
+
+            createCurve();
+            createEnvironment(); 
+            createCityBuildings(); 
+            createStreetLights(); 
+            createCityProps(); 
+            createBenches(); 
+            createGuardrails();
+            createOverheadWires(); 
+            createEgoCar();      
+            createTraffic();
+            createPedestrians(); 
+            createSpeedLines();
+            
+            createTrafficLightSystem(0.1); 
+            createTrafficLightSystem(0.6); 
+
+            window.addEventListener('resize', onWindowResize, false);
+
+            window.addEventListener('scroll', () => {
+                const heroHeader = document.getElementById('hero-header');
+                const scrollHint = document.getElementById('scrollHint');
+                const scrollY = window.scrollY;
+
+                let opacity = 1 - (scrollY / 400);
+                
+                if (opacity < 0) opacity = 0;
+
+                if (heroHeader) {
+                    heroHeader.style.opacity = opacity;
+                    heroHeader.style.visibility = opacity <= 0 ? 'hidden' : 'visible';
+                    heroHeader.style.transition = 'none'; 
+                    heroHeader.style.transform = `translate(-50%, -${50 + scrollY * 0.05}%)`;
+                }
+
+                if (scrollHint) {
+                    scrollHint.style.opacity = opacity;
+                    scrollHint.style.visibility = opacity <= 0 ? 'hidden' : 'visible';
+                }
+            });
+        }
+
+        function createCurve() {
+            curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 20), new THREE.Vector3(0, 0, -100),
+                new THREE.Vector3(20, 0, -300), new THREE.Vector3(40, 0, -500),
+                new THREE.Vector3(0, 0, -800), new THREE.Vector3(-30, 0, -1000),
+                new THREE.Vector3(-30, 0, -1200)
+            ]);
+        }
+
+        function createEnvironment() {
+            const outerRoadGeo = new THREE.TubeGeometry(curve, 1000, 20, 8, false); 
+            flattenRoad(outerRoadGeo);
+            const outerRoadMat = new THREE.MeshBasicMaterial({ color: CONFIG.outerRoadColor });
+            const outerRoadMesh = new THREE.Mesh(outerRoadGeo, outerRoadMat);
+            outerRoadMesh.position.y = -0.56; 
+            scene.add(outerRoadMesh);
+
+            const innerRoadGeo = new THREE.TubeGeometry(curve, 1000, 7.0, 8, false); 
+            flattenRoad(innerRoadGeo);
+            const innerRoadMat = new THREE.MeshPhongMaterial({ color: CONFIG.drivableColor, shininess: 10, specular: 0x222222 });
+            const innerRoadMesh = new THREE.Mesh(innerRoadGeo, innerRoadMat);
+            innerRoadMesh.position.y = -0.55; 
+            scene.add(innerRoadMesh);
+
+            createLaneMarking(-7, CONFIG.laneColor);
+            createLaneMarking(7, CONFIG.laneColor);
+            createLaneMarking(-0.25, 0xffcc00);
+            createLaneMarking(0.25, 0xffcc00);
+
+            const arShaderMat = new THREE.ShaderMaterial({
+                transparent: true,
+                uniforms: {
+                    uColor: { value: new THREE.Color(CONFIG.pathColor) },
+                    uProgress: { value: 0.0 },
+                    uVisibleLength: { value: 0.08 } 
+                },
+                vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                fragmentShader: `uniform vec3 uColor; uniform float uProgress; uniform float uVisibleLength; varying vec2 vUv;
+                    void main() {
+                        float startPoint = uProgress; float endPoint = uProgress + uVisibleLength;
+                        if (vUv.x < startPoint) discard; if (vUv.x > endPoint) discard;
+                        float fadeIn = smoothstep(startPoint, startPoint + 0.005, vUv.x);
+                        float fadeOut = 1.0 - smoothstep(endPoint - 0.04, endPoint, vUv.x);
+                        gl_FragColor = vec4(uColor, fadeIn * fadeOut);
+                    }`
+            });
+            const pathGeo = new THREE.TubeGeometry(curve, 1000, 0.5, 8, false);
+            pathLine = new THREE.Mesh(pathGeo, arShaderMat);
+            pathLine.position.set(3.5, 0.5, 0); 
+            scene.add(pathLine);
+        }
+
+        function createCityBuildings() {
+            const baseGeo = new THREE.BoxGeometry(1, 1, 1);
+            const buildingMat = new THREE.MeshPhongMaterial({
+                color: CONFIG.buildingColor, 
+                shininess: 10,
+                specular: 0x222222
+            });
+
+            const count = 80; 
+            for(let i=0; i<count; i++) {
+                const t = Math.random();
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                const side = Math.random() > 0.5 ? 1 : -1;
+                const dist = 25 + Math.random() * 60; 
+                const pos = point.clone().add(rightVec.clone().multiplyScalar(dist * side));
+                const w = 10 + Math.random() * 20;
+                const d = 10 + Math.random() * 20;
+                const h = 30 + Math.random() * 100;
+                const mesh = new THREE.Mesh(baseGeo, buildingMat);
+                mesh.position.set(pos.x, h/2 - 2, pos.z);
+                mesh.scale.set(w, h, d);
+                const dx = point.x - pos.x;
+                const dz = point.z - pos.z;
+                const theta = Math.atan2(dz, dx); 
+                mesh.rotation.y = -theta; 
+                scene.add(mesh);
+            }
+        }
+
+        function createStreetLights() {
+            const poleGeo = new THREE.CylinderGeometry(0.1, 0.1, 8, 8);
+            const poleMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+            const bulbGeo = new THREE.SphereGeometry(0.3, 8, 8);
+            const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfffff0 });
+            const count = 10; 
+            for(let i=0; i<count; i++) {
+                const t = (i / count) + 0.05; 
+                if(t > 1) continue;
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                const offset = 9; 
+                if (i % 2 === 0) { 
+                    const posLeft = point.clone().add(rightVec.clone().multiplyScalar(-offset));
+                    const poleL = new THREE.Mesh(poleGeo, poleMat);
+                    poleL.position.copy(posLeft); poleL.position.y = 4; scene.add(poleL);
+                    const target = point.clone(); target.y = 4; poleL.lookAt(target);
+                    const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8), poleMat);
+                    armL.position.set(0, 3.0, 1.0); armL.rotation.x = Math.PI / 2; poleL.add(armL);
+                    const bulbL = new THREE.Mesh(bulbGeo, bulbMat);
+                    bulbL.position.set(0, 3.0, 2.2); poleL.add(bulbL);
+                } else {
+                    const posRight = point.clone().add(rightVec.clone().multiplyScalar(offset));
+                    const poleR = new THREE.Mesh(poleGeo, poleMat);
+                    poleR.position.copy(posRight); poleR.position.y = 4; scene.add(poleR);
+                    const target = point.clone(); target.y = 4; poleR.lookAt(target);
+                    const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8), poleMat);
+                    armR.position.set(0, 3.0, 1.0); armR.rotation.x = Math.PI / 2; poleR.add(armR);
+                    const bulbR = new THREE.Mesh(bulbGeo, bulbMat);
+                    bulbR.position.set(0, 3.0, 2.2); poleR.add(bulbR);
+                }
+            }
+        }
+
+        function createCityProps() {
+            const trunkMat = new THREE.MeshPhongMaterial({ color: 0x5a4d41 }); 
+            const leaveMat = new THREE.MeshPhongMaterial({ color: 0x2d4c1e, shininess: 10 }); 
+
+            const trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.2, 7); 
+            const leavesGeo = new THREE.DodecahedronGeometry(1.0); 
+
+            const count = 60; 
+
+            for(let i=0; i<count; i++) {
+                const t = Math.random();
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                
+                const side = Math.random() > 0.5 ? 1 : -1;
+                
+                const dist = 11 + Math.random() * 5; 
+                
+                const pos = point.clone().add(rightVec.clone().multiplyScalar(dist * side));
+
+                const tree = new THREE.Group();
+
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = 0.6;
+                tree.add(trunk);
+
+                const leaves = new THREE.Mesh(leavesGeo, leaveMat);
+                leaves.position.y = 1.6;
+                const s = 1 + Math.random() * 0.4;
+                leaves.scale.set(s, s * 1.2, s); 
+                leaves.rotation.y = Math.random() * Math.PI;
+                leaves.rotation.z = (Math.random() - 0.5) * 0.3;
+                tree.add(leaves);
+
+                tree.position.copy(pos);
+                
+                const treeScale = 0.8 + Math.random() * 0.5;
+                tree.scale.set(treeScale, treeScale, treeScale);
+
+                scene.add(tree);
+            }
+        }
+
+        function createSittingPedestrian() {
+            const group = new THREE.Group();
+            const mannequinMat = new THREE.MeshPhongMaterial({ color: 0xeeeeee, shininess: 30 });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), mannequinMat);
+            head.position.y = 0.7; group.add(head);
+            const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.4, 8, 8), mannequinMat);
+            torso.position.y = 0.25; group.add(torso);
+            const upperLegGeo = new THREE.CapsuleGeometry(0.1, 0.35, 8, 8);
+            const leftUpper = new THREE.Mesh(upperLegGeo, mannequinMat);
+            leftUpper.position.set(-0.12, 0.05, 0.2); leftUpper.rotation.x = -Math.PI / 2; group.add(leftUpper);
+            const leftLower = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.35, 8, 8), mannequinMat);
+            leftLower.position.set(-0.12, -0.15, 0.35); group.add(leftLower);
+            const rightUpper = new THREE.Mesh(upperLegGeo, mannequinMat);
+            rightUpper.position.set(0.12, 0.05, 0.2); rightUpper.rotation.x = -Math.PI / 2; group.add(rightUpper);
+            const rightLower = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.35, 8, 8), mannequinMat);
+            rightLower.position.set(0.12, -0.15, 0.35); group.add(rightLower);
+            const armGeo = new THREE.CapsuleGeometry(0.08, 0.45, 8, 8);
+            const leftArm = new THREE.Mesh(armGeo, mannequinMat); leftArm.position.set(-0.28, 0.3, 0.05); leftArm.rotation.x = -Math.PI/4; group.add(leftArm);
+            const rightArm = new THREE.Mesh(armGeo, mannequinMat); rightArm.position.set(0.28, 0.3, 0.05); rightArm.rotation.x = -Math.PI/4; group.add(rightArm);
+            group.scale.set(0.85, 0.85, 0.85);
+            return group;
+        }
+
+        function createBenches() {
+            const seatGeo = new THREE.BoxGeometry(2, 0.1, 0.6);
+            const benchMat = new THREE.MeshPhongMaterial({ color: CONFIG.benchColor });
+            const count = 40;
+            for(let i=0; i<count; i++) {
+                const t = Math.random();
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                const side = Math.random() > 0.5 ? 1 : -1;
+                const dist = 11 + Math.random() * 1.5; 
+                const pos = point.clone().add(rightVec.clone().multiplyScalar(dist * side));
+                const benchGroup = new THREE.Group();
+                const seat = new THREE.Mesh(seatGeo, benchMat);
+                seat.position.y = 0.5; benchGroup.add(seat);
+                const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.6), benchMat);
+                leftLeg.position.set(-0.8, 0.25, 0); benchGroup.add(leftLeg);
+                const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.6), benchMat);
+                rightLeg.position.set(0.8, 0.25, 0); benchGroup.add(rightLeg);
+                benchGroup.position.copy(pos); benchGroup.lookAt(point); scene.add(benchGroup);
+                if(Math.random() > 0.6) { 
+                    const sitter = createSittingPedestrian();
+                    sitter.position.copy(pos).add(new THREE.Vector3(0, 0.55, 0));
+                    sitter.lookAt(point); scene.add(sitter);
+                }
+            }
+        }
+
+        function createGuardrails() {
+            const railMat = new THREE.MeshPhongMaterial({ color: 0x555555, shininess: 50 });
+            const offsetCurve = (offset) => {
+                const points = [];
+                for(let i=0; i<=100; i++) {
+                    const t = i/100; const pt = curve.getPointAt(t); const tan = curve.getTangentAt(t).normalize();
+                    const right = new THREE.Vector3(-tan.z, 0, tan.x); points.push(pt.clone().add(right.multiplyScalar(offset)));
+                }
+                return new THREE.CatmullRomCurve3(points);
+            };
+            const leftCurve = offsetCurve(-8.5); const rightCurve = offsetCurve(8.5);
+            const lRail = new THREE.Mesh(new THREE.TubeGeometry(leftCurve, 200, 0.2, 4, false), railMat);
+            lRail.position.y = 0.5; scene.add(lRail);
+            const rRail = new THREE.Mesh(new THREE.TubeGeometry(rightCurve, 200, 0.2, 4, false), railMat);
+            rRail.position.y = 0.5; scene.add(rRail);
+            const postGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+            for(let i=0; i<150; i++) {
+                 const t = i/150; const lPt = leftCurve.getPointAt(t); const rPt = rightCurve.getPointAt(t);
+                 const p1 = new THREE.Mesh(postGeo, railMat); p1.position.set(lPt.x, 0.5, lPt.z); scene.add(p1);
+                 const p2 = new THREE.Mesh(postGeo, railMat); p2.position.set(rPt.x, 0.5, rPt.z); scene.add(p2);
+            }
+        }
+
+        function createOverheadWires() {
+            const wireMat = new THREE.MeshBasicMaterial({ color: CONFIG.wireColor });
+            const count = 40;
+            for(let i=0; i<count; i++) {
+                const t1 = Math.random(); const t2 = Math.min(1, t1 + 0.05 + Math.random() * 0.1); 
+                const p1 = curve.getPointAt(t1); const tan1 = curve.getTangentAt(t1).normalize();
+                const right1 = new THREE.Vector3(-tan1.z, 0, tan1.x);
+                const p2 = curve.getPointAt(t2); const tan2 = curve.getTangentAt(t2).normalize();
+                const right2 = new THREE.Vector3(-tan2.z, 0, tan2.x);
+                const h1 = 15 + Math.random() * 10; const h2 = 15 + Math.random() * 10;
+                const dist1 = 15 + Math.random() * 20; const dist2 = 15 + Math.random() * 20;
+                const start = p1.clone().add(right1.clone().multiplyScalar(-dist1)).setY(h1);
+                const end = p2.clone().add(right2.clone().multiplyScalar(dist2)).setY(h2);
+                scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(start, end), 8, 0.03, 4, false), wireMat));
+            }
+        }
+
+        function createTrafficLightSystem(t) {
+            const thisRedMat = redLightMat.clone();
+            const thisGreenMat = greenLightMat.clone();
+            const point = curve.getPointAt(t); const tangent = curve.getTangentAt(t).normalize();
+            const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+            const polePos = point.clone().add(rightVec.clone().multiplyScalar(8.5));
+            const stopLine = new THREE.Mesh(new THREE.PlaneGeometry(14, 1.0), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            const stopLinePos = polePos.clone().add(rightVec.clone().multiplyScalar(-8.5)).add(tangent.clone().multiplyScalar(-2.0));
+            stopLine.position.copy(stopLinePos); stopLine.position.y = -0.53; 
+            stopLine.lookAt(stopLinePos.clone().add(tangent)); stopLine.rotateX(-Math.PI / 2); scene.add(stopLine);
+            const group = new THREE.Group();
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 9, 16), new THREE.MeshPhongMaterial({ color: 0x333333 }));
+            pole.position.set(0, 4.5, 0); group.add(pole);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 6, 16), new THREE.MeshPhongMaterial({ color: 0x333333 }));
+            arm.rotation.z = Math.PI / 2; arm.position.set(-3, 8, 0); group.add(arm);
+            const housing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 0.8), new THREE.MeshPhongMaterial({ color: 0x111111 }));
+            housing.position.set(-5.5, 7.5, 0); group.add(housing);
+            const redLight = new THREE.Mesh(new THREE.CircleGeometry(0.25, 32), thisRedMat);
+            redLight.position.set(-6.1, 7.5, 0.55); group.add(redLight);
+            const greenLight = new THREE.Mesh(new THREE.CircleGeometry(0.25, 32), thisGreenMat);
+            greenLight.position.set(-4.9, 7.5, 0.55); group.add(greenLight);
+            group.position.copy(polePos); group.lookAt(polePos.clone().sub(tangent)); scene.add(group);
+            trafficLights.push({ stopT: t, isRed: true, stopStartTime: null, redMat: thisRedMat, greenMat: thisGreenMat });
+        }
+
+        function flattenRoad(geometry) {
+            const pos = geometry.attributes.position;
+            for(let i=0; i < pos.count; i++) { pos.setY(i, pos.getY(i) * 0.02); } 
+            geometry.computeVertexNormals();
+        }
+
+        function createLaneMarking(xOffset, color) {
+            const lane = new THREE.Mesh(new THREE.TubeGeometry(curve, 1000, 0.15, 4, false), new THREE.MeshBasicMaterial({ color: color }));
+            lane.position.set(xOffset, -0.2, 0); scene.add(lane);
+        }
+
+        function createEgoCar() {
+            const group = new THREE.Group();
+
+            const bodyMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 100 }); 
+            const darkMat = new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 100 }); 
+            const glassMat = new THREE.MeshPhongMaterial({ color: 0x111111, opacity: 0.9, transparent: true, shininess: 150 }); 
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xccffff }); 
+            const tailMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
+
+            const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.6, 4.6), bodyMat);
+            chassis.position.y = 0.6; group.add(chassis);
+            const skirt = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.2, 4.7), darkMat);
+            skirt.position.y = 0.3; group.add(skirt);
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 2.4), glassMat);
+            cabin.position.set(0, 1.15, -0.3); group.add(cabin);
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.1, 2.5), bodyMat);
+            roof.position.set(0, 1.45, -0.3); group.add(roof);
+
+            const frontCamHousing = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.3), darkMat);
+            frontCamHousing.position.set(0, 1.45, 0.9); frontCamHousing.rotation.x = Math.PI / 12; group.add(frontCamHousing);
+            const frontCamLens = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.05), glassMat);
+            frontCamLens.position.set(0, 1.43, 1.05); frontCamLens.rotation.x = Math.PI / 12; group.add(frontCamLens);
+
+            const hlLeft = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.1), lightMat);
+            hlLeft.position.set(-0.6, 0.7, 2.31); group.add(hlLeft);
+            const hlRight = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.1), lightMat);
+            hlRight.position.set(0.6, 0.7, 2.31); group.add(hlRight);
+            const tl = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 0.1), tailMat);
+            tl.position.set(0, 0.7, -2.31); group.add(tl);
+
+            const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.3, 16); wheelGeo.rotateZ(Math.PI / 2);
+            const wheelMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+            const positions = [{ x: 0.9, z: 1.5 }, { x: -0.9, z: 1.5 }, { x: 0.9, z: -1.5 }, { x: -0.9, z: -1.5 }];
+            positions.forEach(pos => { const w = new THREE.Mesh(wheelGeo, wheelMat); w.position.set(pos.x, 0.35, pos.z); group.add(w); });
+
+            // --- Enhanced: Spotlights (Headlights) ---
+            const spotLightL = new THREE.SpotLight(0xffffee, 8, 40, 0.6, 0.5, 1);
+            spotLightL.position.set(-0.6, 0.7, 2.4);
+            spotLightL.target.position.set(-1.0, 0, 10);
+            group.add(spotLightL);
+            group.add(spotLightL.target);
+
+            const spotLightR = new THREE.SpotLight(0xffffee, 8, 40, 0.6, 0.5, 1);
+            spotLightR.position.set(0.6, 0.7, 2.4);
+            spotLightR.target.position.set(1.0, 0, 10);
+            group.add(spotLightR);
+            group.add(spotLightR.target);
+            // -----------------------------------------
+
+            egoGroup = group;
+            scene.add(egoGroup);
+        }
+        
+        function createVehicleDesign(type, color) {
+            const carGroup = new THREE.Group();
+            const bodyMat = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
+            const glassMat = new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 120 });
+            const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); 
+            const headLightMat = new THREE.MeshBasicMaterial({ color: 0xffffcc }); 
+
+            let body, cabin;
+
+            if (type === 'bus') {
+                body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.4, 7.0), bodyMat); body.position.y = 1.2; carGroup.add(body);
+                cabin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.8, 6.8), glassMat); cabin.position.set(0, 1.8, 0); carGroup.add(cabin);
+                const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 0.1), headLightMat); fLight.position.set(0, 0.8, 3.5); carGroup.add(fLight);
+                const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.8, -3.5); carGroup.add(rLight);
+            } else if (type === 'truck') {
+                const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, 4.0), new THREE.MeshPhongMaterial({ color: 0xcccccc })); cargo.position.set(0, 1.6, -1.0); carGroup.add(cargo);
+                const cab = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.8, 1.5), bodyMat); cab.position.set(0, 1.2, 2.0); carGroup.add(cab);
+                const windShield = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 0.8), glassMat); windShield.position.set(0, 1.5, 2.4); carGroup.add(windShield);
+                const fLight = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), headLightMat); fLight.position.set(0, 0.6, 2.75); carGroup.add(fLight);
+                const rLight = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.6, -3.0); carGroup.add(rLight);
+            } else if (type === 'suv') {
+                body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 4.8), bodyMat); body.position.y = 0.7; carGroup.add(body);
+                cabin = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.7, 2.8), glassMat); cabin.position.set(0, 1.4, -0.2); carGroup.add(cabin);
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 2.9), bodyMat); roof.position.set(0, 1.8, -0.2); carGroup.add(roof);
+                const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.1), headLightMat); fLight.position.set(0, 0.8, 2.4); carGroup.add(fLight);
+                const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.8, -2.4); carGroup.add(rLight);
+            } else {
+                body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.7, 4.6), bodyMat); body.position.y = 0.5; carGroup.add(body);
+                cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.6, 2.2), glassMat); cabin.position.set(0, 1.0, -0.3); carGroup.add(cabin);
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 2.3), bodyMat); roof.position.set(0, 1.35, -0.3); carGroup.add(roof);
+                const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.1), headLightMat); fLight.position.set(0, 0.5, 2.3); carGroup.add(fLight);
+                const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.1), tailLightMat); rLight.position.set(0, 0.5, -2.3); carGroup.add(rLight);
+            }
+            const shadowLen = type === 'bus' ? 7.2 : (type === 'truck' ? 5.6 : (type === 'suv' ? 5.0 : 4.8));
+            const shadow = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.6, shadowLen), 
+                new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.6, transparent: true })
+            );
+            shadow.rotation.x = -Math.PI/2; shadow.position.y = 0.05; carGroup.add(shadow);
+            return carGroup;
+        }
+
+        function createTraffic() {
+            const trafficConfigs = [
+                { type: 'bus', color: 0x2255ff, speed: 0.00025 },    
+                { type: 'truck', color: 0xdddddd, speed: 0.00028 },  
+                { type: 'sedan', color: 0xff3333, speed: 0.00045 },  
+                { type: 'suv', color: 0x222222, speed: 0.00035 },    
+                { type: 'sedan', color: 0xcccccc, speed: 0.00042 },  
+                { type: 'truck', color: 0x334455, speed: 0.00028 }   
+            ];
+
+            trafficConfigs.forEach((config, i) => {
+                const car = createVehicleDesign(config.type, config.color);
+                car.userData = { 
+                    t: (i / trafficConfigs.length) + Math.random() * 0.05, 
+                    speed: config.speed,
+                    laneOffset: -3.5 
+                };
+                const pt = curve.getPointAt(car.userData.t);
+                car.position.copy(pt).add(new THREE.Vector3(car.userData.laneOffset, 0, 0));
+                scene.add(car);
+                trafficCars.push(car);
+            });
+        }
+
+        function createPedestrians() {
+            for (let i = 0; i < 8; i++) { 
+                const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.8, 8, 16), new THREE.MeshPhongMaterial({ color: 0xeeeeee }));
+                const t = 0.1 + Math.random() * 0.8; const pt = curve.getPointAt(t);
+                const tan = curve.getTangentAt(t).normalize(); const side = new THREE.Vector3(-tan.z, 0, tan.x);
+                p.position.copy(pt).add(side.multiplyScalar((10.5 + Math.random() * 4) * (Math.random() > 0.5 ? 1 : -1)));
+                scene.add(p);
+            }
+        }
+
+        function createSpeedLines() {
+            const vertices = [];
+            for (let i=0; i<200; i++) {
+                let x = THREE.MathUtils.randFloat(20, 80); if (Math.random()>0.5) x = -x;
+                vertices.push(x, THREE.MathUtils.randFloat(0, 20), THREE.MathUtils.randFloat(-500, 0));
+            }
+            const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            speedLines = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.3, transparent: true, opacity: 0.2 }));
+            scene.add(speedLines);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (egoGroup && egoGroup.userData.lidar) {
+                egoGroup.userData.lidar.rotation.y += 0.15;
+            }
+            if (camPosIndex > 1) {
+                camPosIndex = 0; trafficLights.forEach(l => { l.isRed = true; l.stopStartTime = null; });
+            }
+            let targetLight = null; let minDist = Infinity;
+            trafficLights.forEach(l => {
+                let d = l.stopT - camPosIndex; if (d > 0 && d < minDist) { minDist = d; targetLight = l; }
+            });
+            let targetSpeed = defaultSpeed;
+            if (targetLight && minDist < 0.07) {
+                if (targetLight.isRed) {
+                    targetSpeed = defaultSpeed * Math.sqrt(minDist / 0.07);
+                    if (minDist < 0.02) {
+                        targetSpeed = 0;
+                        if (targetLight.stopStartTime === null) targetLight.stopStartTime = performance.now();
+                        else if (performance.now() - targetLight.stopStartTime > 2000) targetLight.isRed = false;
+                    }
+                }
+            }
+            trafficLights.forEach(l => {
+                l.redMat.emissiveIntensity = l.isRed ? 3.0 : 0.0; l.greenMat.emissiveIntensity = l.isRed ? 0.0 : 3.0;
+            });
+            
+            // Reverted to original logic (no scroll boost)
+            currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, (targetSpeed > currentSpeed) ? 0.005 : 0.1);
+            
+            if(document.getElementById('speed')) document.getElementById('speed').innerText = Math.floor((currentSpeed / defaultSpeed) * 60);
+            if (pathLine.material.uniforms) {
+                pathLine.material.uniforms.uVisibleLength.value = THREE.MathUtils.lerp(pathLine.material.uniforms.uVisibleLength.value, (targetLight && targetLight.isRed && minDist < 0.07) ? Math.max(0.001, Math.min(0.08, minDist)) : 0.08, 0.05);
+                pathLine.material.uniforms.uProgress.value = camPosIndex + 0.002;
+            }
+            camPosIndex += currentSpeed; 
+            const cp = curve.getPointAt(camPosIndex); const lp = curve.getPointAt(Math.min(camPosIndex + 0.01, 1));
+            egoGroup.position.copy(cp).add(new THREE.Vector3(3.5, 0.4, 0)); egoGroup.lookAt(lp.clone().add(new THREE.Vector3(3.5, 0.4, 0))); 
+            trafficCars.forEach(c => {
+                c.userData.t -= c.userData.speed; 
+                if(c.userData.t < 0) c.userData.t = 1;
+                c.position.copy(curve.getPointAt(c.userData.t)).add(new THREE.Vector3(-3.5, 0.3, 0));
+                const lookAtPoint = curve.getPointAt(Math.max(0, c.userData.t - 0.01)).add(new THREE.Vector3(-3.5, 0.3, 0));
+                c.lookAt(lookAtPoint);
+            });
+            const fv = new THREE.Vector3().subVectors(lp, cp).normalize();
+            camera.position.lerp(cp.clone().add(new THREE.Vector3(3.5, 0, 0)).add(fv.clone().multiplyScalar(-12).add(new THREE.Vector3(0, 6, 0))), 0.1);
+            camera.lookAt(egoGroup.position.clone().add(fv.multiplyScalar(15))); 
+            speedLines.position.z += 2; if (speedLines.position.z > 200) speedLines.position.z = -500;
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
