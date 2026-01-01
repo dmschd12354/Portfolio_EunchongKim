@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eunchong Kim - Autonomous Driving Portfolio</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -394,7 +396,7 @@
             
             /* 처음엔 안 보이다가 스르륵 등장 */
             opacity: 0;
-            animation: slideInRight 1s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.5s forwards;
+            animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.5s forwards;
         }
 
         .cv-glass-panel {
@@ -479,6 +481,10 @@
         @media (max-width: 1024px) {
             .hero-side-cv { display: none; }
         }
+
+        /* YouTube 아이콘 호버 시 빨간색 효과 */
+        .fa-youtube { transition: color 0.3s; }
+        p:hover .fa-youtube { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
     </style>
     
     <script type="importmap">
@@ -534,7 +540,7 @@
     
     <div class="top-center-container" id="hero-header">
         <div class="name-main">EUNCHONG KIM</div>
-        <div class="name-sub">AI Researcher & Developer</div>
+        <div class="name-sub">AI Researcher & Developer (Autonomous Driving / Robotics)</div>
     </div>
 
     <div class="scroll-hint" id="scrollHint">
@@ -755,6 +761,16 @@
                     <p><i class="fas fa-envelope"></i> <a href="mailto:ekim01@unist.ac.kr" class="contact-link">ekim01@unist.ac.kr</a></p>
                     <p><i class="fas fa-envelope"></i> <a href="mailto:justinkim7577@gmail.com" class="contact-link">justinkim7577@gmail.com</a></p>
                     <p><i class="fas fa-phone"></i> 010-7577-0596</p>
+                    
+                    <p>
+                        <i class="fab fa-youtube" style="margin-right: 5px;"></i> 
+                        <a href="https://youtube.com/@ennzzng?si=zuh2NKhMAPaVFQ0Y" target="_blank" class="contact-link">
+                            YouTube Channel (@ennzzng)
+                        </a>
+                    </p>
+
+                    <div style="margin-top: 30px;">
+                        </div>
 
                 </div>
             </div>
