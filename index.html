@@ -385,106 +385,111 @@
             .modal-content { width: 95%; padding: 25px; margin: 0; max-height: 80vh; }
         }
 
-        /* --- [NEW] Right Side Floating CV Widget --- */
-        .hero-side-cv {
+        /* --- [NEW] Right Side Dual Widgets (CV & YouTube) --- */
+        .side-widget-container {
             position: fixed;
             top: 50%;
-            right: 60px; /* 화면 오른쪽 여백 */
+            right: 60px;
             transform: translateY(-50%);
-            z-index: 90; /* 캔버스보다 위, 모달보다 아래 */
+            z-index: 90;
+            display: flex;
+            flex-direction: column; /* 위아래로 배치 */
+            gap: 20px; /* 버튼 사이 간격 */
+        }
+
+        .side-widget {
             text-decoration: none;
-            
-            /* 처음엔 안 보이다가 스르륵 등장 */
-            opacity: 0;
+            display: block;
+            opacity: 0; /* 처음엔 숨김 */
+            /* 공통 애니메이션: slideInRight */
+        }
+
+        /* 1번: CV 버튼 (0.5초 대기 후 등장) */
+        .widget-cv {
             animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.5s forwards;
         }
 
-        .cv-glass-panel {
-            background: rgba(5, 8, 16, 0.3);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            
-            /* 우측에 포인트 라인 (파란색) */
-            border-right: 3px solid var(--primary-color);
-            
-            padding: 25px 35px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end; /* 텍스트 오른쪽 정렬 */
-            gap: 5px;
-            
-            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-            position: relative;
+        /* 2번: 유튜브 버튼 (0.7초 대기 후 등장 - 시간차 효과) */
+        .widget-yt {
+            animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.7s forwards;
         }
 
-        /* 작은 라벨 (Curriculum Vitae) */
+        .cv-glass-panel {
+            background: rgba(5, 8, 16, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+            min-width: 180px; /* 너비 통일 */
+        }
+
+        /* CV 스타일 (기본: 파랑/민트) */
+        .widget-cv .cv-glass-panel {
+            border-right: 3px solid var(--primary-color);
+        }
+
+        /* YouTube 스타일 (기본: 빨강) */
+        .widget-yt .cv-glass-panel {
+            border-right: 3px solid #cc0000; /* 유튜브 브랜드 컬러 */
+        }
+
         .cv-label-small {
-            color: var(--primary-color);
-            font-size: 0.7rem;
-            letter-spacing: 3px;
+            color: #888;
+            font-size: 0.65rem;
+            letter-spacing: 2px;
             font-weight: 700;
             text-transform: uppercase;
             margin-bottom: 5px;
             transition: color 0.3s;
         }
 
-        /* 큰 텍스트 (DOWNLOAD) */
         .cv-label-large {
             color: #fff;
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 700;
             letter-spacing: 1px;
-            line-height: 1;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        .cv-icon-box {
-            font-size: 1.2rem;
-            opacity: 0.6;
-            transition: all 0.3s ease;
-        }
-
-        /* --- Hover Effects (마우스 올렸을 때) --- */
-        .hero-side-cv:hover .cv-glass-panel {
-            background: rgba(5, 8, 16, 0.85);
-            /* 테두리 색상을 민트색(Ego Color)으로 변경 */
-            border-color: rgba(0, 255, 204, 0.3);
+        /* --- Hover Effects --- */
+        /* CV 호버: 민트색 */
+        .widget-cv:hover .cv-glass-panel {
+            background: rgba(5, 8, 16, 0.9);
+            border-color: var(--ego-color);
             border-right-color: var(--ego-color);
-            
-            /* 왼쪽으로 살짝 튀어나오는 효과 */
-            transform: translateX(-15px);
-            box-shadow: -10px 0 50px rgba(0, 255, 204, 0.1);
+            transform: translateX(-10px);
+            box-shadow: -10px 0 30px rgba(0, 255, 204, 0.2);
         }
+        .widget-cv:hover .cv-label-small { color: var(--ego-color); }
+        .widget-cv:hover .cv-icon-box { color: var(--ego-color); }
 
-        .hero-side-cv:hover .cv-label-small {
-            color: var(--ego-color);
-            text-shadow: 0 0 5px var(--ego-color);
+        /* YouTube 호버: 밝은 빨강 */
+        .widget-yt:hover .cv-glass-panel {
+            background: rgba(5, 8, 16, 0.9);
+            border-color: rgba(255, 50, 50, 0.5);
+            border-right-color: #ff0000;
+            transform: translateX(-10px);
+            box-shadow: -10px 0 30px rgba(255, 0, 0, 0.3);
         }
+        .widget-yt:hover .cv-label-small { color: #ff0000; }
+        .widget-yt:hover .cv-icon-box { color: #ff0000; }
 
-        .hero-side-cv:hover .cv-icon-box {
-            transform: translateX(5px) scale(1.1);
-            color: var(--ego-color);
-            opacity: 1;
-        }
-
-        /* 등장 애니메이션 정의 */
         @keyframes slideInRight {
-            0% { opacity: 0; transform: translate(100px, -50%); }
-            100% { opacity: 1; transform: translate(0, -50%); }
+            0% { opacity: 0; transform: translate(100px, 0); }
+            100% { opacity: 1; transform: translate(0, 0); }
         }
 
-        /* 모바일에서는 가림 (화면이 좁으므로) */
         @media (max-width: 1024px) {
-            .hero-side-cv { display: none; }
+            .side-widget-container { display: none; }
         }
-
-        /* YouTube 아이콘 호버 시 빨간색 효과 */
-        .fa-youtube { transition: color 0.3s; }
-        p:hover .fa-youtube { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
     </style>
     
     <script type="importmap">
@@ -517,6 +522,30 @@
                 <div class="data-item"><div>DRIVE MODE</div><div class="autopilot-status">AUTOPILOT</div></div>
             </div>
         </div>
+    </div>
+
+    <div class="side-widget-container">
+        
+        <a href="Eunchong_Kim_CV.pdf" target="_blank" class="side-widget widget-cv">
+            <div class="cv-glass-panel">
+                <!-- <span class="cv-label-small">Curriculum Vitae</span> -->
+                <span class="cv-label-large">
+                    CV
+                    <i class="fas fa-file-pdf cv-icon-box"></i>
+                </span>
+            </div>
+        </a>
+
+        <a href="https://youtube.com/@ennzzng?si=zuh2NKhMAPaVFQ0Y" target="_blank" class="side-widget widget-yt">
+            <div class="cv-glass-panel">
+                <span class="cv-label-small">Personal Youtube Channel</span>
+                <span class="cv-label-large">
+                    @ennzzng
+                    <i class="fab fa-youtube cv-icon-box"></i>
+                </span>
+            </div>
+        </a>
+
     </div>
 
     <a href="Eunchong_Kim_CV.pdf" target="_blank" class="hero-side-cv">
@@ -762,16 +791,6 @@
                     <p><i class="fas fa-envelope"></i> <a href="mailto:justinkim7577@gmail.com" class="contact-link">justinkim7577@gmail.com</a></p>
                     <p><i class="fas fa-phone"></i> 010-7577-0596</p>
                     
-                    <p>
-                        <i class="fab fa-youtube" style="margin-right: 5px;"></i> 
-                        <a href="https://youtube.com/@ennzzng?si=zuh2NKhMAPaVFQ0Y" target="_blank" class="contact-link">
-                            YouTube Channel (@ennzzng)
-                        </a>
-                    </p>
-
-                    <div style="margin-top: 30px;">
-                        </div>
-
                 </div>
             </div>
         </section>
