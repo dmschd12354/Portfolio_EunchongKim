@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eunchong Kim - Autonomous Driving Portfolio</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -17,7 +17,8 @@
             --warn-color: #ff3333;
             --gold-color: #ffd700;
             --glass-bg: rgba(11, 16, 38, 0.65);
-            --glass-border: rgba(0, 119, 238, 0.3);
+            /* [유지] 테두리: 얇고 은은하게 설정 */
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
         
         body, html { 
@@ -37,17 +38,7 @@
             z-index: 10; pointer-events: none; padding: 40px; box-sizing: border-box; 
         }
 
-        /* Scanline Effect (CRT Monitor Style) */
-        .ui-layer::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 2;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-        }
+        /* [삭제됨] 비네팅 효과 (.ui-layer::before) 제거 */
 
         .hud-group { display: flex; flex-direction: column; gap: 5px; }
         .hud-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
@@ -94,7 +85,8 @@
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
             
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* [유지] 얇은 테두리 적용 */
+            border: 1px solid var(--glass-border);
             border-radius: 100px;
             
             box-shadow: 
@@ -139,7 +131,17 @@
             text-align: center; z-index: 30; width: 100%; pointer-events: none;
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        .name-main { font-size: 4.5rem; font-weight: 800; letter-spacing: 5px; text-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        
+        /* [유지] 이름 그라데이션 적용 */
+        .name-main { 
+            font-size: 4.5rem; 
+            font-weight: 800; 
+            letter-spacing: 5px; 
+            background: linear-gradient(to bottom right, #ffffff, #aaddff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0,0,0,0.8); 
+        }
         .name-sub { font-size: 1.4rem; color: var(--ego-color); letter-spacing: 1px; margin-top: 10px; text-shadow: 0 0 10px rgba(0,0,0,0.8); font-weight: 400; }
 
         .scroll-hint {
@@ -175,7 +177,8 @@
         .cv-card {
             background: rgba(11, 16, 38, 0.6);
             backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(0, 119, 238, 0.1);
+            /* [유지] 얇은 테두리 적용 */
+            border: 1px solid var(--glass-border);
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -186,14 +189,13 @@
             transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s ease-out;
         }
 
-        /* Gradient Border Effect */
-        .cv-card::before {
+        /* [유지] 카드 표면 노이즈 텍스처 추가 */
+        .cv-card::after {
             content: "";
-            position: absolute; inset: 0; border-radius: 12px; padding: 1px;
-            background: linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 119, 238, 0.1), transparent);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude;
+            position: absolute; inset: 0; opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
             pointer-events: none;
+            z-index: -1;
         }
 
         .compact-card { padding-top: 20px; cursor: default; }
@@ -212,22 +214,21 @@
             box-shadow: 0 15px 40px rgba(0, 255, 204, 0.15);
         }
 
-        .cv-card:not(.compact-card)::after {
+        .cv-card:not(.compact-card)::before {
             content: 'Click to View Details →';
             position: absolute; bottom: 20px; right: 20px;
             font-size: 0.8rem; color: var(--ego-color); 
             opacity: 0; transform: translateX(-10px);
             transition: all 0.15s ease-out;
             font-weight: 700;
+            z-index: 2;
         }
-        .cv-card:hover::after { opacity: 1; transform: translateX(0); }
+        .cv-card:hover::before { opacity: 1; transform: translateX(0); }
 
         .hero-card {
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(11, 16, 38, 0.85) 100%);
         }
-        .hero-card::before {
-            background: linear-gradient(135deg, var(--gold-color), transparent);
-        }
+        
         .hero-badge {
             position: absolute; top: 25px; right: -35px; background: var(--gold-color); color: #000;
             font-weight: 800; padding: 8px 40px; transform: rotate(45deg); z-index: 2;
@@ -316,6 +317,7 @@
             position: relative;
             border-radius: 12px;
             overflow: hidden;
+            /* [유지] 얇은 테두리 적용 */
             border: 1px solid var(--glass-border);
             background: #000;
         }
@@ -339,12 +341,13 @@
         .video-container {
             position: relative; padding-bottom: 56.25%; height: 0;
             overflow: hidden; border-radius: 12px;
+            /* [유지] 얇은 테두리 적용 */
             border: 1px solid var(--glass-border); background: #000;
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
         }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* --- Tags (Reverted to Original) --- */
+        /* --- Tags --- */
         .tag { 
             display: inline-block; padding: 4px 10px; margin: 2px; 
             border-radius: 4px; 
@@ -365,12 +368,12 @@
         @media (max-width: 768px) {
             .ui-layer { padding: 20px; }
             .speed-val { font-size: 3.5rem; }
-            .nav-box { display: none; } /* 모바일에서 공간 확보를 위해 네비게이션 숨김 */
+            .nav-box { display: none; }
             .bottom-bar { display: none; }
             
             .fixed-nav-bar { 
                 width: 85%; 
-                bottom: 30px; top: auto; /* 상단에서 하단으로 이동 */
+                bottom: 30px; top: auto;
                 background: rgba(10, 15, 30, 0.9);
                 padding: 10px;
                 gap: 0;
@@ -383,9 +386,10 @@
             
             .content-section { padding: 0 15px; margin-bottom: 80px; }
             .modal-content { width: 95%; padding: 25px; margin: 0; max-height: 80vh; }
+            .side-widget-container { display: none; }
         }
 
-        /* --- [NEW] Right Side Dual Widgets (CV & YouTube) --- */
+        /* --- Right Side Dual Widgets (CV & YouTube) --- */
         .side-widget-container {
             position: fixed;
             top: 50%;
@@ -393,23 +397,20 @@
             transform: translateY(-50%);
             z-index: 90;
             display: flex;
-            flex-direction: column; /* 위아래로 배치 */
-            gap: 20px; /* 버튼 사이 간격 */
+            flex-direction: column;
+            gap: 20px;
         }
 
         .side-widget {
             text-decoration: none;
             display: block;
-            opacity: 0; /* 처음엔 숨김 */
-            /* 공통 애니메이션: slideInRight */
+            opacity: 0;
         }
 
-        /* 1번: CV 버튼 (0.5초 대기 후 등장) */
         .widget-cv {
             animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.5s forwards;
         }
 
-        /* 2번: 유튜브 버튼 (0.7초 대기 후 등장 - 시간차 효과) */
         .widget-yt {
             animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.7s forwards;
         }
@@ -418,24 +419,23 @@
             background: rgba(5, 8, 16, 0.4);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* [유지] 얇은 테두리 적용 */
+            border: 1px solid var(--glass-border);
             padding: 20px 30px;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
             position: relative;
-            min-width: 180px; /* 너비 통일 */
+            min-width: 180px;
         }
 
-        /* CV 스타일 (기본: 파랑/민트) */
         .widget-cv .cv-glass-panel {
             border-right: 3px solid var(--primary-color);
         }
 
-        /* YouTube 스타일 (기본: 빨강) */
         .widget-yt .cv-glass-panel {
-            border-right: 3px solid #cc0000; /* 유튜브 브랜드 컬러 */
+            border-right: 3px solid #cc0000;
         }
 
         .cv-label-small {
@@ -460,7 +460,6 @@
         }
 
         /* --- Hover Effects --- */
-        /* CV 호버: 민트색 */
         .widget-cv:hover .cv-glass-panel {
             background: rgba(5, 8, 16, 0.9);
             border-color: var(--ego-color);
@@ -471,7 +470,6 @@
         .widget-cv:hover .cv-label-small { color: var(--ego-color); }
         .widget-cv:hover .cv-icon-box { color: var(--ego-color); }
 
-        /* YouTube 호버: 밝은 빨강 */
         .widget-yt:hover .cv-glass-panel {
             background: rgba(5, 8, 16, 0.9);
             border-color: rgba(255, 50, 50, 0.5);
@@ -485,10 +483,6 @@
         @keyframes slideInRight {
             0% { opacity: 0; transform: translate(100px, 0); }
             100% { opacity: 1; transform: translate(0, 0); }
-        }
-
-        @media (max-width: 1024px) {
-            .side-widget-container { display: none; }
         }
     </style>
     
@@ -525,12 +519,11 @@
     </div>
 
     <div class="side-widget-container">
-        
         <a href="Eunchong_Kim_CV.pdf" target="_blank" class="side-widget widget-cv">
             <div class="cv-glass-panel">
-                <!-- <span class="cv-label-small">Curriculum Vitae</span> -->
+                <span class="cv-label-small">Curriculum Vitae</span>
                 <span class="cv-label-large">
-                    CV
+                    Download
                     <i class="fas fa-file-pdf cv-icon-box"></i>
                 </span>
             </div>
@@ -545,18 +538,7 @@
                 </span>
             </div>
         </a>
-
     </div>
-
-    <a href="Eunchong_Kim_CV.pdf" target="_blank" class="hero-side-cv">
-        <div class="cv-glass-panel">
-            <span class="cv-label-small">Curriculum Vitae</span>
-            <span class="cv-label-large">
-                DOWNLOAD
-                <i class="fas fa-file-pdf cv-icon-box"></i>
-            </span>
-        </div>
-    </a>
 
     <nav class="fixed-nav-bar">
         <a href="#projects" class="nav-btn">Projects</a>
@@ -633,7 +615,7 @@
                     </div>
                     <span class="cv-sub-text">2026 IEEE Intelligent Vehicles Symposium (IV)</span>
                     <div class="cv-desc">
-                         Academic Referee / Reviewer activity.
+                          Academic Referee / Reviewer activity.
                     </div>
                 </div>
 
@@ -734,10 +716,7 @@
                 <div class="cv-item">
                     <span class="cv-sub-text">Programming & Frameworks</span>
                     <div style="margin-top: 10px;">
-                        <span class="tag">VS Code</span>
-                        <span class="tag">Python</span><span class="tag">C++</span><span class="tag">PyTorch</span>
-                        <span class="tag">ROS</span><span class="tag">OpenCV</span><span class="tag">NumPy</span>
-                        <span class="tag">Matplotlib</span><span class="tag">Matlab</span>
+                        <span class="tag">VS Code</span><span class="tag">Python</span><span class="tag">C++</span><span class="tag">PyTorch</span><span class="tag">ROS</span><span class="tag">OpenCV</span><span class="tag">NumPy</span><span class="tag">Matplotlib</span><span class="tag">Matlab</span>
                     </div>
                 </div>
                 
@@ -1178,10 +1157,6 @@
             fogColor: 0x050810,
             laneColor: 0xaaaaaa,
             buildingColor: 0x333344,
-            propColorDark: 0x1a1a1a,
-            propColorLight: 0xaaaaaa,
-            neonBlue: 0x0088ff,
-            neonOrange: 0xffaa00,
             wireColor: 0x111111,
             benchColor: 0x664422    
         };
@@ -1232,7 +1207,7 @@
             createBenches(); 
             createGuardrails();
             createOverheadWires(); 
-            createEgoCar();      
+            createEgoCar();       
             createTraffic();
             createPedestrians(); 
             createSpeedLines();
@@ -1352,7 +1327,7 @@
             const poleGeo = new THREE.CylinderGeometry(0.1, 0.1, 8, 8);
             const poleMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
             const bulbGeo = new THREE.SphereGeometry(0.3, 8, 8);
-            const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfffff0 });
+            const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfffff0 }); 
             const count = 10; 
             for(let i=0; i<count; i++) {
                 const t = (i / count) + 0.05; 
@@ -1721,7 +1696,6 @@
                 l.redMat.emissiveIntensity = l.isRed ? 3.0 : 0.0; l.greenMat.emissiveIntensity = l.isRed ? 0.0 : 3.0;
             });
             
-            // Reverted to original logic (no scroll boost)
             currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, (targetSpeed > currentSpeed) ? 0.005 : 0.1);
             
             if(document.getElementById('speed')) document.getElementById('speed').innerText = Math.floor((currentSpeed / defaultSpeed) * 60);
@@ -1743,11 +1717,14 @@
             camera.position.lerp(cp.clone().add(new THREE.Vector3(3.5, 0, 0)).add(fv.clone().multiplyScalar(-12).add(new THREE.Vector3(0, 6, 0))), 0.1);
             camera.lookAt(egoGroup.position.clone().add(fv.multiplyScalar(15))); 
             speedLines.position.z += 2; if (speedLines.position.z > 200) speedLines.position.z = -500;
+            
             renderer.render(scene, camera);
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
     </script>
 </body>
