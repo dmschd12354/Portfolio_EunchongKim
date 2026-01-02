@@ -6,7 +6,6 @@
     <title>Eunchong Kim - Autonomous Driving Portfolio</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -17,7 +16,6 @@
             --warn-color: #ff3333;
             --gold-color: #ffd700;
             --glass-bg: rgba(11, 16, 38, 0.65);
-            /* [유지] 테두리: 얇고 은은하게 설정 */
             --glass-border: rgba(255, 255, 255, 0.08);
         }
         
@@ -32,13 +30,17 @@
 
         #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
         
+        #fade-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; opacity: 0; pointer-events: none; z-index: 5;
+            transition: opacity 0.1s linear;
+        }
+
         /* --- UI Layer & HUD --- */
         .ui-layer { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             z-index: 10; pointer-events: none; padding: 40px; box-sizing: border-box; 
         }
-
-        /* [삭제됨] 비네팅 효과 (.ui-layer::before) 제거 */
 
         .hud-group { display: flex; flex-direction: column; gap: 5px; }
         .hud-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
@@ -59,185 +61,87 @@
         .data-item div:last-child { font-size: 1.5rem; font-weight: 700; }
         .highlight { color: var(--primary-color); }
 
-        /* Pulse Animation for Autopilot */
-        @keyframes pulse-text {
-            0%, 100% { opacity: 1; text-shadow: 0 0 10px #00ffcc; }
-            50% { opacity: 0.5; text-shadow: 0 0 2px #00ffcc; }
-        }
         .autopilot-status { color: var(--ego-color); animation: pulse-text 2s infinite; }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; text-shadow: 0 0 10px #00ffcc; } 50% { opacity: 0.5; text-shadow: 0 0 2px #00ffcc; } }
 
-        /* --- Menu Bar --- */
+        /* --- [Debug Mode Toggle] --- */
+        .debug-toggle-container {
+            position: fixed; top: 40px; right: 40px; 
+            z-index: 100; pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .debug-label { font-size: 0.8rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px;
+            background-color: #888; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: rgba(0, 255, 204, 0.2); border-color: var(--ego-color); }
+        input:checked + .slider:before { transform: translateX(26px); background-color: var(--ego-color); box-shadow: 0 0 10px var(--ego-color); }
+
+        /* --- Menu Bar (Scroll Spy) --- */
         .fixed-nav-bar {
-            position: fixed; 
-            top: 25px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            z-index: 100; 
-            pointer-events: auto;
-            
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            gap: 5px; 
-            padding: 8px 10px;
-            
+            position: fixed; top: 25px; left: 50%; transform: translateX(-50%);
+            z-index: 100; pointer-events: auto;
+            display: flex; justify-content: center; align-items: center;
+            gap: 5px; padding: 8px 10px;
             background: rgba(10, 15, 30, 0.65);
             backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            
-            /* [유지] 얇은 테두리 적용 */
             border: 1px solid var(--glass-border);
             border-radius: 100px;
-            
-            box-shadow: 
-                0 4px 30px rgba(0, 0, 0, 0.5),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.05), 
-                0 0 20px rgba(0, 255, 204, 0.05);
-                
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 20px rgba(0, 255, 204, 0.05);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-
-        .fixed-nav-bar:hover {
-            box-shadow: 
-                0 10px 40px rgba(0, 0, 0, 0.6),
-                0 0 25px rgba(0, 255, 204, 0.15);
-            border-color: rgba(0, 255, 204, 0.2);
-        }
-
         .nav-btn {
-            text-decoration: none; 
-            color: #b0b5c0; 
-            font-size: 0.85rem; 
-            font-weight: 600;
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            padding: 10px 24px;
-            border-radius: 100px; 
-            border: none;
-            background: transparent;
+            text-decoration: none; color: #b0b5c0; font-size: 0.85rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px; padding: 10px 24px;
+            border-radius: 100px; border: none; background: transparent;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
+        .nav-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+        .nav-btn.active { color: #000; background: var(--ego-color); font-weight: 800; box-shadow: 0 0 15px var(--ego-color); }
 
-        .nav-btn:hover { 
-            color: #fff; 
-            background: rgba(255, 255, 255, 0.1); 
-            text-shadow: 0 0 8px rgba(255,255,255,0.5);
+        .action-btn {
+            text-decoration: none; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; padding: 10px 24px; border-radius: 100px;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
         }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
-        .top-center-container {
-            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 30; width: 100%; pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        
-        /* [유지] 이름 그라데이션 적용 */
-        .name-main { 
-            font-size: 4.5rem; 
-            font-weight: 800; 
-            letter-spacing: 5px; 
-            background: linear-gradient(to bottom right, #ffffff, #aaddff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(0,0,0,0.8); 
-        }
+        /* Other Styles */
+        .top-center-container { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 30; width: 100%; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; }
+        .name-main { font-size: 4.5rem; font-weight: 800; letter-spacing: 5px; background: linear-gradient(to bottom right, #ffffff, #aaddff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,0,0,0.8); }
         .name-sub { font-size: 1.4rem; color: var(--ego-color); letter-spacing: 1px; margin-top: 10px; text-shadow: 0 0 10px rgba(0,0,0,0.8); font-weight: 400; }
-
-        .scroll-hint {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-            z-index: 20; text-align: center; pointer-events: none;
-            transition: opacity 0.3s ease;
-            background: linear-gradient(to bottom, var(--ego-color) 0%, rgba(0, 255, 204, 0.2) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex; flex-direction: column; align-items: center;
-        }
+        .scroll-hint { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 20; text-align: center; pointer-events: none; transition: opacity 0.3s ease; background: linear-gradient(to bottom, var(--ego-color) 0%, rgba(0, 255, 204, 0.2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; flex-direction: column; align-items: center; }
         .scroll-icon { font-size: 1.5rem; animation: bounce 2s infinite; line-height: 0.8; }
         .scroll-icon:nth-child(2) { margin-top: -10px; animation-delay: 0.2s; }
-
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
-
         #portfolio-scroll { position: relative; z-index: 15; width: 100%; }
         .spacer-vh { height: 100vh; width: 100%; pointer-events: none; }
-
-        .content-section {
-            max-width: 900px; margin: 0 auto 100px auto; padding: 0 20px;
-            scroll-margin-top: 120px;
-        }
-
-        .section-title {
-            font-size: 2rem; color: var(--ego-color); margin-bottom: 25px;
-            border-bottom: 2px solid var(--primary-color); display: inline-block; padding-bottom: 5px;
-            text-shadow: 0 0 10px rgba(0, 119, 238, 0.4);
-        }
+        .content-section { max-width: 900px; margin: 0 auto 100px auto; padding: 0 20px; scroll-margin-top: 120px; }
+        .section-title { font-size: 2rem; color: var(--ego-color); margin-bottom: 25px; border-bottom: 2px solid var(--primary-color); display: inline-block; padding-bottom: 5px; text-shadow: 0 0 10px rgba(0, 119, 238, 0.4); }
         .compact-header .section-title { margin-bottom: 15px; }
-
-        /* --- Enhanced Glassmorphism Cards --- */
-        .cv-card {
-            background: rgba(11, 16, 38, 0.6);
-            backdrop-filter: blur(20px) saturate(180%);
-            /* [유지] 얇은 테두리 적용 */
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-            cursor: pointer; position: relative; overflow: hidden;
-            opacity: 0;
-            transform: translateY(80px) scale(0.9);
-            transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s ease-out;
-        }
-
-        /* [유지] 카드 표면 노이즈 텍스처 추가 */
-        .cv-card::after {
-            content: "";
-            position: absolute; inset: 0; opacity: 0.05;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: -1;
-        }
-
+        .cv-card { background: rgba(11, 16, 38, 0.7); backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--glass-border); border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; cursor: pointer; position: relative; overflow: hidden; opacity: 0; transform: translateY(80px) scale(0.9); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s ease-out; }
         .compact-card { padding-top: 20px; cursor: default; }
-
-        .cv-card.animate-in {
-            animation: popUpElastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        @keyframes popUpElastic {
-            0% { opacity: 0; transform: translateY(80px) scale(0.9); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .cv-card.animate-in:hover:not(.compact-card) {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 15px 40px rgba(0, 255, 204, 0.15);
-        }
-
-        .cv-card:not(.compact-card)::before {
-            content: 'Click to View Details →';
-            position: absolute; bottom: 20px; right: 20px;
-            font-size: 0.8rem; color: var(--ego-color); 
-            opacity: 0; transform: translateX(-10px);
-            transition: all 0.15s ease-out;
-            font-weight: 700;
-            z-index: 2;
-        }
+        .cv-card.animate-in { animation: popUpElastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes popUpElastic { 0% { opacity: 0; transform: translateY(80px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        .cv-card.animate-in:hover:not(.compact-card) { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 40px rgba(0, 255, 204, 0.15); }
+        .cv-card:not(.compact-card)::before { content: 'Click to View Details →'; position: absolute; bottom: 20px; right: 20px; font-size: 0.8rem; color: var(--ego-color); opacity: 0; transform: translateX(-10px); transition: all 0.15s ease-out; font-weight: 700; z-index: 2; }
         .cv-card:hover::before { opacity: 1; transform: translateX(0); }
-
-        .hero-card {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(11, 16, 38, 0.85) 100%);
-        }
         
-        .hero-badge {
-            position: absolute; top: 25px; right: -35px; background: var(--gold-color); color: #000;
-            font-weight: 800; padding: 8px 40px; transform: rotate(45deg); z-index: 2;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.9rem;
-        }
-
+        .hero-card { background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(11, 16, 38, 0.85) 100%); }
+        /* [Fix] Hero Card Padding for Badge */
+        .hero-card .cv-header { padding-right: 70px; }
+        
+        .hero-badge { position: absolute; top: 25px; right: -35px; background: var(--gold-color); color: #000; font-weight: 800; padding: 8px 40px; transform: rotate(45deg); z-index: 2; box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-size: 0.9rem; }
         .cv-item { margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
         .cv-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-
         .cv-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
         .cv-main-text { font-size: 1.4rem; font-weight: 700; }
         .cv-date { font-size: 0.9rem; color: #aaa; }
@@ -245,245 +149,85 @@
         .cv-summary { color: #ccc; font-size: 0.95rem; font-family: 'Noto Sans KR'; }
         .cv-desc { margin-top: 10px; color: #ccc; font-size: 0.95rem; font-family: 'Noto Sans KR'; line-height: 1.6; }
         .cv-desc ul { margin: 5px 0 0 20px; padding: 0; }
-        
         .thesis-title { font-style: italic; color: #aaa; font-size: 0.9rem; margin-top: 5px; display: block; }
         .thesis-title::before { content: "Thesis: "; font-weight: bold; color: #666; font-style: normal; }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; visibility: hidden; transition: all 0.2s ease;
-            backdrop-filter: blur(5px);
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.2s ease; backdrop-filter: blur(5px); }
         .modal-overlay.open { opacity: 1; visibility: visible; }
-        
-        .modal-content {
-            background: #111625; border: 1px solid var(--ego-color);
-            width: 90%; max-width: 900px; max-height: 85vh;
-            border-radius: 15px; padding: 40px;
-            overflow-y: auto; position: relative;
-            transform: scale(0.9); transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 0 50px rgba(0, 255, 204, 0.1);
-        }
+        .modal-content { background: #111625; border: 1px solid var(--ego-color); width: 90%; max-width: 900px; max-height: 85vh; border-radius: 15px; padding: 40px; overflow-y: auto; position: relative; transform: scale(0.9); transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); }
         .modal-overlay.open .modal-content { transform: scale(1); }
-
-        .modal-close {
-            position: absolute; top: 20px; right: 25px;
-            font-size: 1.5rem; color: #888; cursor: pointer; transition: 0.2s;
-        }
+        .modal-close { position: absolute; top: 20px; right: 25px; font-size: 1.5rem; color: #888; cursor: pointer; transition: 0.2s; }
         .modal-close:hover { color: #fff; transform: rotate(90deg); }
-
         .modal-title { font-size: 1.8rem; color: #fff; margin-bottom: 5px; font-weight: 700; border-bottom: none; }
         .modal-role { color: var(--ego-color); font-size: 1.1rem; margin-bottom: 20px; display: block; font-weight: 600; }
         .modal-body { font-family: 'Noto Sans KR'; line-height: 1.8; color: #ddd; }
         .modal-body ul { margin-left: 20px; margin-bottom: 20px; }
         .modal-body h4 { color: var(--primary-color); margin-top: 30px; margin-bottom: 15px; font-size: 1.1rem; border-left: 3px solid var(--primary-color); padding-left: 10px; }
-
-        /* Timeline for Achievements (Enhanced) */
-        .achievement-track {
-            display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;
-            border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 10px; padding-left: 25px; position: relative;
-        }
-        .track-item {
-            display: flex; align-items: center; gap: 15px; padding: 12px;
-            background: rgba(255,255,255,0.03); border-radius: 6px; position: relative;
-        }
-        .track-item::before {
-            content: ''; position: absolute; left: -32px; top: 50%; transform: translateY(-50%);
-            width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color);
-            box-shadow: 0 0 10px var(--primary-color);
-        }
-        .track-step {
-            font-weight: 700; color: #666; font-size: 0.9rem; min-width: 80px;
-        }
+        .achievement-track { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 10px; padding-left: 25px; position: relative; }
+        .track-item { display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 6px; position: relative; }
+        .track-item::before { content: ''; position: absolute; left: -32px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 10px var(--primary-color); }
+        .track-step { font-weight: 700; color: #666; font-size: 0.9rem; min-width: 80px; }
         .track-result { color: #fff; font-weight: 500; }
-        
         .track-item.winner { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold-color); }
         .track-item.winner::before { background: var(--gold-color); box-shadow: 0 0 15px var(--gold-color); }
         .track-item.winner .track-step { color: var(--gold-color); }
         .track-item.winner .track-result { color: var(--gold-color); font-weight: 800; font-size: 1.1rem; }
-
-        /* --- Gallery Styles --- */
-        .gallery-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            margin-top: 30px;
-        }
-
-        .gallery-item {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            /* [유지] 얇은 테두리 적용 */
-            border: 1px solid var(--glass-border);
-            background: #000;
-        }
-
+        .gallery-grid { display: flex; flex-direction: column; gap: 30px; margin-top: 30px; }
+        .gallery-item { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); background: #000; }
         .gallery-item img { width: 100%; display: block; transition: transform 0.3s ease; }
         .gallery-item:hover img { transform: scale(1.02); }
-
-        .gallery-caption-overlay {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 25px 20px 15px 20px;
-            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
-            color: #fff; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1.1rem; pointer-events: none;
-        }
-        .gallery-caption-overlay span {
-            display: block; font-size: 0.8rem; color: var(--ego-color); font-weight: 500;
-            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;
-        }
-
-        /* --- Video Styles --- */
+        .gallery-caption-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 25px 20px 15px 20px; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%); color: #fff; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1.1rem; pointer-events: none; }
+        .gallery-caption-overlay span { display: block; font-size: 0.8rem; color: var(--ego-color); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
         .video-wrapper { margin: 20px 0 30px 0; width: 100%; }
-        .video-container {
-            position: relative; padding-bottom: 56.25%; height: 0;
-            overflow: hidden; border-radius: 12px;
-            /* [유지] 얇은 테두리 적용 */
-            border: 1px solid var(--glass-border); background: #000;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
-        }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border); background: #000; box-shadow: 0 0 20px rgba(0, 255, 204, 0.1); }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        /* --- Tags --- */
-        .tag { 
-            display: inline-block; padding: 4px 10px; margin: 2px; 
-            border-radius: 4px; 
-            background: rgba(0, 119, 238, 0.2); 
-            border: 1px solid var(--primary-color); 
-            font-size: 0.8rem; color: var(--ego-color); 
-        }
-        
+        .tag { display: inline-block; padding: 4px 10px; margin: 2px; border-radius: 4px; background: rgba(0, 119, 238, 0.2); border: 1px solid var(--primary-color); font-size: 0.8rem; color: var(--ego-color); }
         .lang-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
         .lang-name { font-weight: 600; color: #eee; }
         .lang-level { color: #888; font-size: 0.9rem; }
-        
         .contact-link { color: var(--ego-color); text-decoration: none; border-bottom: 1px dashed var(--ego-color); transition: 0.3s; }
         .contact-link:hover { color: #fff; border-bottom-style: solid; text-shadow: 0 0 8px var(--ego-color); }
         .footer-spacer { height: 200px; }
 
-        /* --- Mobile Responsive --- */
         @media (max-width: 768px) {
             .ui-layer { padding: 20px; }
             .speed-val { font-size: 3.5rem; }
-            .nav-box { display: none; }
-            .bottom-bar { display: none; }
-            
-            .fixed-nav-bar { 
-                width: 85%; 
-                bottom: 30px; top: auto;
-                background: rgba(10, 15, 30, 0.9);
-                padding: 10px;
-                gap: 0;
-                justify-content: space-evenly;
-            }
+            .nav-box { display: block !important; margin-top: 10px; transform: scale(0.7); transform-origin: top left; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); padding: 10px; border-radius: 8px; }
+            .bottom-bar { bottom: 20px; right: 20px; left: auto; display: flex; flex-direction: column; align-items: flex-end; }
+            .data-grid { display: none; } 
+            .side-widget-container { display: none !important; }
+            .fixed-nav-bar { width: 85%; bottom: 30px; top: auto; background: rgba(10, 15, 30, 0.9); padding: 10px; gap: 0; justify-content: space-evenly; }
             .nav-btn { padding: 8px 12px; font-size: 0.75rem; }
-            
             .name-main { font-size: 2.8rem; letter-spacing: 2px; }
             .name-sub { font-size: 1.1rem; }
-            
             .content-section { padding: 0 15px; margin-bottom: 80px; }
             .modal-content { width: 95%; padding: 25px; margin: 0; max-height: 80vh; }
-            .side-widget-container { display: none; }
+            .debug-toggle-container { top: 20px; right: 20px; }
+            
+            /* Mobile adjustment for Hero Card padding */
+            .hero-card .cv-header {
+                padding-right: 60px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
         }
 
-        /* --- Right Side Dual Widgets (CV & YouTube) --- */
-        .side-widget-container {
-            position: fixed;
-            top: 50%;
-            right: 60px;
-            transform: translateY(-50%);
-            z-index: 90;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .side-widget {
-            text-decoration: none;
-            display: block;
-            opacity: 0;
-        }
-
-        .widget-cv {
-            animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.5s forwards;
-        }
-
-        .widget-yt {
-            animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.7s forwards;
-        }
-
-        .cv-glass-panel {
-            background: rgba(5, 8, 16, 0.4);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            /* [유지] 얇은 테두리 적용 */
-            border: 1px solid var(--glass-border);
-            padding: 20px 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-            position: relative;
-            min-width: 180px;
-        }
-
-        .widget-cv .cv-glass-panel {
-            border-right: 3px solid var(--primary-color);
-        }
-
-        .widget-yt .cv-glass-panel {
-            border-right: 3px solid #cc0000;
-        }
-
-        .cv-label-small {
-            color: #888;
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            transition: color 0.3s;
-        }
-
-        .cv-label-large {
-            color: #fff;
-            font-size: 1.4rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        /* --- Hover Effects --- */
-        .widget-cv:hover .cv-glass-panel {
-            background: rgba(5, 8, 16, 0.9);
-            border-color: var(--ego-color);
-            border-right-color: var(--ego-color);
-            transform: translateX(-10px);
-            box-shadow: -10px 0 30px rgba(0, 255, 204, 0.2);
-        }
+        .side-widget-container { position: fixed; top: 50%; right: 60px; transform: translateY(-50%); z-index: 90; display: flex; flex-direction: column; gap: 20px; }
+        .side-widget { text-decoration: none; display: block; opacity: 0; }
+        .widget-cv { animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.5s forwards; }
+        .widget-yt { animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.7s forwards; }
+        .cv-glass-panel { background: rgba(5, 8, 16, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--glass-border); padding: 20px 30px; display: flex; flex-direction: column; align-items: flex-end; transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1); position: relative; min-width: 180px; }
+        .widget-cv .cv-glass-panel { border-right: 3px solid var(--primary-color); }
+        .widget-yt .cv-glass-panel { border-right: 3px solid #cc0000; }
+        .cv-label-small { color: #888; font-size: 0.65rem; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; transition: color 0.3s; }
+        .cv-label-large { color: #fff; font-size: 1.4rem; font-weight: 700; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .widget-cv:hover .cv-glass-panel { background: rgba(5, 8, 16, 0.9); border-color: var(--ego-color); border-right-color: var(--ego-color); transform: translateX(-10px); box-shadow: -10px 0 30px rgba(0, 255, 204, 0.2); }
         .widget-cv:hover .cv-label-small { color: var(--ego-color); }
         .widget-cv:hover .cv-icon-box { color: var(--ego-color); }
-
-        .widget-yt:hover .cv-glass-panel {
-            background: rgba(5, 8, 16, 0.9);
-            border-color: rgba(255, 50, 50, 0.5);
-            border-right-color: #ff0000;
-            transform: translateX(-10px);
-            box-shadow: -10px 0 30px rgba(255, 0, 0, 0.3);
-        }
+        .widget-yt:hover .cv-glass-panel { background: rgba(5, 8, 16, 0.9); border-color: rgba(255, 50, 50, 0.5); border-right-color: #ff0000; transform: translateX(-10px); box-shadow: -10px 0 30px rgba(255, 0, 0, 0.3); }
         .widget-yt:hover .cv-label-small { color: #ff0000; }
         .widget-yt:hover .cv-icon-box { color: #ff0000; }
-
-        @keyframes slideInRight {
-            0% { opacity: 0; transform: translate(100px, 0); }
-            100% { opacity: 1; transform: translate(0, 0); }
-        }
+        @keyframes slideInRight { 0% { opacity: 0; transform: translate(100px, 0); } 100% { opacity: 1; transform: translate(0, 0); } }
     </style>
     
     <script type="importmap">
@@ -491,7 +235,16 @@
     </script>
 </head>
 <body>
+    <div id="fade-overlay"></div>
     <div id="canvas-container"></div>
+
+    <div class="debug-toggle-container">
+        <span class="debug-label">Debug Mode</span>
+        <label class="switch">
+            <input type="checkbox" id="debugToggle" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
 
     <div class="ui-layer">
         <div class="hud-group">
@@ -511,8 +264,8 @@
         </div>
         <div class="bottom-bar">
             <div class="data-grid">
-                <div class="data-item"><div>REMAINING</div><div>12.4 km</div></div>
-                <div class="data-item"><div>ETA</div><div class="highlight">18:45</div></div>
+                <div class="data-item"><div>REMAINING</div><div id="ui-dist">12.4 km</div></div>
+                <div class="data-item"><div>ETA</div><div class="highlight" id="ui-eta">18:45</div></div>
                 <div class="data-item"><div>DRIVE MODE</div><div class="autopilot-status">AUTOPILOT</div></div>
             </div>
         </div>
@@ -540,7 +293,7 @@
         </a>
     </div>
 
-    <nav class="fixed-nav-bar">
+    <nav class="fixed-nav-bar" id="navbar">
         <a href="#projects" class="nav-btn">Projects</a>
         <a href="#education" class="nav-btn">Education</a>
         <a href="#experience" class="nav-btn">Experiences</a>
@@ -595,8 +348,8 @@
                         <ul>
                             <li><strong>Location:</strong> Bremen, Germany.</li>
                             <li><strong>Advisor:</strong> Prof. Francesco Maurelli.</li>
-                            <li><strong>Honors:</strong> Major Representative, Merit-based Scholarship (€5,000 per year).</li>
                             <li><strong>GPA:</strong> 1.52 (German Scale) ≈ 3.5 / 4.0.</li>
+                            <li><strong>Honors:</strong> Major Representative, Merit-based Scholarship (€5,000 per year).</li>
                         </ul>
                         <span class="thesis-title">Event-Based Motion Segmentation and Stereo Feature Matching in Highly Cluttered Environments</span>
                     </div>
@@ -716,7 +469,7 @@
                 <div class="cv-item">
                     <span class="cv-sub-text">Programming & Frameworks</span>
                     <div style="margin-top: 10px;">
-                        <span class="tag">VS Code</span><span class="tag">Python</span><span class="tag">C++</span><span class="tag">PyTorch</span><span class="tag">ROS</span><span class="tag">OpenCV</span><span class="tag">NumPy</span><span class="tag">Matplotlib</span><span class="tag">Matlab</span>
+                        <span class="tag">Python</span><span class="tag">C++</span><span class="tag">PyTorch</span><span class="tag">ROS</span><span class="tag">OpenCV</span><span class="tag">NumPy</span><span class="tag">Matplotlib</span><span class="tag">Matlab</span>
                     </div>
                 </div>
                 
@@ -766,10 +519,49 @@
             <div class="cv-card compact-card">
                 <h2 class="section-title">CONTACT</h2>
                 <div class="cv-desc" style="font-size: 1.1rem; text-align: center; padding: 20px 0;">
-                    <p><i class="fas fa-envelope"></i> <a href="mailto:ekim01@unist.ac.kr" class="contact-link">ekim01@unist.ac.kr</a></p>
-                    <p><i class="fas fa-envelope"></i> <a href="mailto:justinkim7577@gmail.com" class="contact-link">justinkim7577@gmail.com</a></p>
-                    <p><i class="fas fa-phone"></i> 010-7577-0596</p>
                     
+                    <div style="display: flex; flex-direction: column; gap: 25px; margin-bottom: 35px;">
+                        
+                        <div>
+                            <div style="font-size: 0.75rem; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; font-weight: 700;">
+                                Academic / Work
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <i class="fas fa-university" style="color: var(--primary-color);"></i>
+                                <a href="mailto:ekim01@unist.ac.kr" class="contact-link" style="font-size: 1.2rem;">ekim01@unist.ac.kr</a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.75rem; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; font-weight: 700;">
+                                Personal
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <i class="fas fa-envelope" style="color: var(--ego-color);"></i>
+                                <a href="mailto:justinkim7577@gmail.com" class="contact-link" style="font-size: 1.2rem;">justinkim7577@gmail.com</a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.75rem; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; font-weight: 700;">
+                                Phone
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <i class="fas fa-phone" style="color: #fff;"></i>
+                                <span style="font-size: 1.2rem;">010-7577-0596</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;">
+                        <a href="Eunchong_Kim_CV.pdf" target="_blank" class="action-btn" style="border: 1px solid var(--primary-color); color: #fff; background: rgba(0, 119, 238, 0.1);">
+                            <i class="fas fa-file-pdf"></i> Download CV
+                        </a>
+                        <a href="https://youtube.com/@ennzzng?si=zuh2NKhMAPaVFQ0Y" target="_blank" class="action-btn" style="border: 1px solid #cc0000; color: #fff; background: rgba(204, 0, 0, 0.1);">
+                            <i class="fab fa-youtube"></i> Youtube
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -786,6 +578,7 @@
     </div>
 
     <script>
+        // --- Data ---
         const projects = [
             {
                 id: 1,
@@ -823,7 +616,7 @@
                     <h4>Key Achievements</h4>
                     <ul>
                         <li><strong>Performance:</strong> Achieved superior driving score compared to baseline in closed-loop evaluation.</li>
-                        <li><strong>Rewards:</strong> Total 30,000,000 won Prize, Recruitment benefits, China AD Tech Tour.</li>
+                        <li><strong>Rewards:</strong> Total ₩30,000,000 Prize, Recruitment benefits, China AD Tech Tour.</li>
                         <li><strong>Optimization:</strong> Achieved 16Hz real-time inference on NVIDIA Jetson AGX Orin.</li>
                     </ul>
 
@@ -858,11 +651,11 @@
                             </div>
                         </div>
                         
-                        <div class="gallery-item" style="height: 310px;">
+                        <div class="gallery-item" style="height: 30px;">
                             <img src="images/E2E_baseline.png" alt="Performance Table" style="width: 100%; height: 280px; object-fit: cover; object-position: top;">
                             <div class="gallery-caption-overlay">
-                                <span>Benchmark</span>
-                                Closed-loop Evaluation: Baselines vs. Proposed Model
+                                <span>Closed-loop Evaluation</span>
+                                Baselines vs. Proposed Model
                             </div>
                         </div>
 
@@ -951,7 +744,7 @@
                     </ul>
                     <h4>Tech Stack</h4>
                     <div>
-                        <span class="tag">Python</span> <span class="tag">OpenCV</span>
+                        <span class="tag">Python</span> <span class="tag">NumPy</span> <span class="tag">OpenCV</span>
                     </div>                    
                     
                     <h4>Gallery</h4>
@@ -1143,6 +936,26 @@
             });
         }, { threshold: 0.15 });
         document.querySelectorAll('.content-section').forEach(sec => observer.observe(sec));
+
+        // --- Scroll Spy Logic ---
+        const sections = document.querySelectorAll("section");
+        const navLinks = document.querySelectorAll(".fixed-nav-bar .nav-btn");
+
+        const scrollSpyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute("id");
+                    navLinks.forEach(link => {
+                        link.classList.remove("active");
+                        if (link.getAttribute("href") === `#${id}`) {
+                            link.classList.add("active");
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.3, rootMargin: "-20% 0px -50% 0px" });
+
+        sections.forEach(section => scrollSpyObserver.observe(section));
     </script>
 
     <script type="module">
@@ -1158,7 +971,12 @@
             laneColor: 0xaaaaaa,
             buildingColor: 0x333344,
             wireColor: 0x111111,
-            benchColor: 0x664422    
+            benchColor: 0x664422,
+            coneColor: 0xff6600,
+            arColorCar: 0x00ffcc,    
+            arColorBus: 0xff00ff,    
+            arColorTruck: 0xffff00,  
+            arColorTL: 0xff3300      
         };
 
         let scene, camera, renderer;
@@ -1174,6 +992,13 @@
 
         let trafficLights = []; 
         let redLightMat, greenLightMat;
+        let totalCurveLength = 0;
+
+        const fadeOverlay = document.getElementById('fade-overlay');
+        
+        // [Debug Mode]
+        let isDebugMode = true; 
+        const debugToggle = document.getElementById('debugToggle');
 
         init();
         animate();
@@ -1200,6 +1025,8 @@
             greenLightMat = new THREE.MeshLambertMaterial({ color: 0x003300, emissive: 0x00ff00, emissiveIntensity: 0.0 });
 
             createCurve();
+            totalCurveLength = curve.getLength(); 
+
             createEnvironment(); 
             createCityBuildings(); 
             createStreetLights(); 
@@ -1207,13 +1034,23 @@
             createBenches(); 
             createGuardrails();
             createOverheadWires(); 
-            createEgoCar();       
+            createEgoCar();        
             createTraffic();
             createPedestrians(); 
             createSpeedLines();
             
             createTrafficLightSystem(0.1); 
             createTrafficLightSystem(0.6); 
+
+            createTrafficCones(); 
+            createTrafficSigns(); 
+
+            if(debugToggle) {
+                debugToggle.addEventListener('change', (e) => {
+                    toggleDebugMode(e.target.checked);
+                });
+                toggleDebugMode(true); 
+            }
 
             window.addEventListener('resize', onWindowResize, false);
 
@@ -1223,7 +1060,6 @@
                 const scrollY = window.scrollY;
 
                 let opacity = 1 - (scrollY / 400);
-                
                 if (opacity < 0) opacity = 0;
 
                 if (heroHeader) {
@@ -1237,6 +1073,27 @@
                     scrollHint.style.opacity = opacity;
                     scrollHint.style.visibility = opacity <= 0 ? 'hidden' : 'visible';
                 }
+
+                if (scrollY < window.innerHeight * 0.5) {
+                    const navLinks = document.querySelectorAll(".fixed-nav-bar .nav-btn");
+                    navLinks.forEach(link => link.classList.remove("active"));
+                }
+            });
+        }
+
+        function toggleDebugMode(active) {
+            isDebugMode = active;
+            if(pathLine) pathLine.visible = active;
+            if(speedLines) speedLines.visible = active;
+            trafficCars.forEach(car => {
+                car.children.forEach(child => {
+                    if(child.userData.isDebugObject) {
+                        child.visible = active;
+                    }
+                });
+            });
+            trafficLights.forEach(tl => {
+                if(tl.arBox) tl.arBox.visible = active;
             });
         }
 
@@ -1372,19 +1229,13 @@
                 const point = curve.getPointAt(t);
                 const tangent = curve.getTangentAt(t).normalize();
                 const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
-                
                 const side = Math.random() > 0.5 ? 1 : -1;
-                
                 const dist = 11 + Math.random() * 5; 
-                
                 const pos = point.clone().add(rightVec.clone().multiplyScalar(dist * side));
-
                 const tree = new THREE.Group();
-
                 const trunk = new THREE.Mesh(trunkGeo, trunkMat);
                 trunk.position.y = 0.6;
                 tree.add(trunk);
-
                 const leaves = new THREE.Mesh(leavesGeo, leaveMat);
                 leaves.position.y = 1.6;
                 const s = 1 + Math.random() * 0.4;
@@ -1392,12 +1243,9 @@
                 leaves.rotation.y = Math.random() * Math.PI;
                 leaves.rotation.z = (Math.random() - 0.5) * 0.3;
                 tree.add(leaves);
-
                 tree.position.copy(pos);
-                
                 const treeScale = 0.8 + Math.random() * 0.5;
                 tree.scale.set(treeScale, treeScale, treeScale);
-
                 scene.add(tree);
             }
         }
@@ -1493,6 +1341,101 @@
             }
         }
 
+        function createTextureLabel(text, colorStr, sizeScale = 2.0) { 
+            const lines = text.split('\n');
+            const fontHeight = 100; 
+            const lineHeight = fontHeight * 1.2;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = `bold ${fontHeight}px 'Rajdhani', sans-serif`;
+
+            let maxWidth = 0;
+            lines.forEach(line => {
+                const w = ctx.measureText(line).width;
+                if(w > maxWidth) maxWidth = w;
+            });
+
+            canvas.width = maxWidth + 60; 
+            canvas.height = (lines.length * lineHeight) + 40;
+            
+            ctx.font = `bold ${fontHeight}px 'Rajdhani', sans-serif`;
+            ctx.textBaseline = 'middle';
+
+            lines.forEach((line, i) => {
+                const y = (canvas.height / 2) - ((lines.length - 1) * lineHeight / 2) + (i * lineHeight);
+                
+                if (line.includes("Status: RED")) {
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#eeeeee'; 
+                    ctx.fillText("Status: ", canvas.width / 2, y);
+                    
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#ff3333'; 
+                    ctx.fillText("RED", canvas.width / 2, y);
+                } 
+                else if (line.includes("Status: GREEN")) {
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#eeeeee'; 
+                    ctx.fillText("Status: ", canvas.width / 2, y);
+                    
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#00ff33'; 
+                    ctx.fillText("GREEN", canvas.width / 2, y);
+                } 
+                else {
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = colorStr; 
+                    ctx.fillText(line, canvas.width / 2, y);
+                }
+            });
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(mat);
+            
+            const aspect = canvas.width / canvas.height;
+            const worldHeight = 1.0 * lines.length * sizeScale; 
+            sprite.scale.set(worldHeight * aspect, worldHeight, 1);
+
+            return sprite;
+        }
+
+        function createARBoundingBox(w, h, d, colorHex, labelText) {
+             const margin = 0.4; 
+             const geo = new THREE.BoxGeometry(w + margin, h + margin, d + margin);
+             const edges = new THREE.EdgesGeometry(geo);
+             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8 }));
+             
+             line.userData.isDebugObject = true;
+
+             if (labelText) {
+                 const cssColor = '#' + new THREE.Color(colorHex).getHexString();
+                 const label = createTextureLabel(labelText, cssColor);
+                 label.position.set(0, (h + margin) / 2 + 1.5, 0); 
+                 line.add(label);
+                 line.userData.labelSprite = label;
+                 label.userData.isDebugObject = true; 
+             }
+
+             return line;
+        }
+
+        function updateTrafficLightLabel(lightObj) {
+            const statusText = lightObj.isRed ? "Status: RED" : "Status: GREEN";
+            const fullText = "TRAFFIC LIGHT\n" + statusText;
+            
+            if(lightObj.arBox && lightObj.arBox.userData.labelSprite) {
+                lightObj.arBox.remove(lightObj.arBox.userData.labelSprite);
+            }
+            
+            const newLabel = createTextureLabel(fullText, '#ffffff', 1.2); 
+            newLabel.position.set(0, 1.0/2 + 2.0, 0);
+            newLabel.userData.isDebugObject = true; 
+            
+            lightObj.arBox.add(newLabel);
+            lightObj.arBox.userData.labelSprite = newLabel;
+        }
+
         function createTrafficLightSystem(t) {
             const thisRedMat = redLightMat.clone();
             const thisGreenMat = greenLightMat.clone();
@@ -1503,19 +1446,111 @@
             const stopLinePos = polePos.clone().add(rightVec.clone().multiplyScalar(-8.5)).add(tangent.clone().multiplyScalar(-2.0));
             stopLine.position.copy(stopLinePos); stopLine.position.y = -0.53; 
             stopLine.lookAt(stopLinePos.clone().add(tangent)); stopLine.rotateX(-Math.PI / 2); scene.add(stopLine);
+            
             const group = new THREE.Group();
             const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 9, 16), new THREE.MeshPhongMaterial({ color: 0x333333 }));
             pole.position.set(0, 4.5, 0); group.add(pole);
             const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 6, 16), new THREE.MeshPhongMaterial({ color: 0x333333 }));
             arm.rotation.z = Math.PI / 2; arm.position.set(-3, 8, 0); group.add(arm);
+            
             const housing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 0.8), new THREE.MeshPhongMaterial({ color: 0x111111 }));
             housing.position.set(-5.5, 7.5, 0); group.add(housing);
+
+            const arBox = createARBoundingBox(2.7, 1.0, 1.0, CONFIG.arColorTL); 
+            arBox.position.set(-5.5, 7.5, 0);
+            arBox.userData.isDebugObject = true; 
+            group.add(arBox);
+
             const redLight = new THREE.Mesh(new THREE.CircleGeometry(0.25, 32), thisRedMat);
             redLight.position.set(-6.1, 7.5, 0.55); group.add(redLight);
             const greenLight = new THREE.Mesh(new THREE.CircleGeometry(0.25, 32), thisGreenMat);
             greenLight.position.set(-4.9, 7.5, 0.55); group.add(greenLight);
             group.position.copy(polePos); group.lookAt(polePos.clone().sub(tangent)); scene.add(group);
-            trafficLights.push({ stopT: t, isRed: true, stopStartTime: null, redMat: thisRedMat, greenMat: thisGreenMat });
+            
+            const lightObj = { stopT: t, isRed: true, lastState: null, stopStartTime: null, redMat: thisRedMat, greenMat: thisGreenMat, arBox: arBox };
+            trafficLights.push(lightObj);
+            
+            updateTrafficLightLabel(lightObj);
+        }
+
+        function createTrafficSigns() {
+            const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8);
+            const poleMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+            
+            const signBoardGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.05, 32);
+            signBoardGeo.rotateX(Math.PI/2);
+            const signMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const rimMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const rimGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 32);
+
+            const count = 12; 
+            for(let i=0; i<count; i++) {
+                const t = (i / count) + 0.08;
+                if(t > 1) continue;
+                
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                
+                const offset = 9.5;
+                const pos = point.clone().add(rightVec.clone().multiplyScalar(offset));
+
+                const signGroup = new THREE.Group();
+                const pole = new THREE.Mesh(poleGeo, poleMat);
+                pole.position.y = 1.25;
+                signGroup.add(pole);
+
+                const board = new THREE.Mesh(signBoardGeo, signMat);
+                board.position.set(0, 2.3, 0.1);
+                signGroup.add(board);
+
+                const rim = new THREE.Mesh(rimGeo, rimMat);
+                rim.position.set(0, 2.3, 0.13);
+                signGroup.add(rim);
+
+                signGroup.position.copy(pos);
+                signGroup.lookAt(point);
+                
+                scene.add(signGroup);
+            }
+        }
+
+        function createTrafficCones() {
+            const coneGeo = new THREE.ConeGeometry(0.2, 0.6, 16);
+            const coneMat = new THREE.MeshLambertMaterial({ color: CONFIG.coneColor, emissive: 0x442200 });
+            const bandGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.15, 16);
+            const bandMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const baseGeo = new THREE.BoxGeometry(0.5, 0.05, 0.5);
+
+            const startT = 0.35;
+            const endT = 0.45;
+            const steps = 15;
+
+            for(let i=0; i<steps; i++) {
+                const t = THREE.MathUtils.lerp(startT, endT, i/steps);
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const rightVec = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                
+                const offset = 6.5 + (Math.random() * 0.5); 
+                const pos = point.clone().add(rightVec.clone().multiplyScalar(offset));
+
+                const coneGroup = new THREE.Group();
+                const body = new THREE.Mesh(coneGeo, coneMat);
+                body.position.y = 0.3;
+                coneGroup.add(body);
+                
+                const band = new THREE.Mesh(bandGeo, bandMat);
+                band.position.y = 0.3;
+                coneGroup.add(band);
+
+                const base = new THREE.Mesh(baseGeo, coneMat);
+                base.position.y = 0.025;
+                coneGroup.add(base);
+
+                coneGroup.position.copy(pos);
+                scene.add(coneGroup);
+            }
         }
 
         function flattenRoad(geometry) {
@@ -1564,7 +1599,6 @@
             const positions = [{ x: 0.9, z: 1.5 }, { x: -0.9, z: 1.5 }, { x: 0.9, z: -1.5 }, { x: -0.9, z: -1.5 }];
             positions.forEach(pos => { const w = new THREE.Mesh(wheelGeo, wheelMat); w.position.set(pos.x, 0.35, pos.z); group.add(w); });
 
-            // --- Enhanced: Spotlights (Headlights) ---
             const spotLightL = new THREE.SpotLight(0xffffee, 8, 40, 0.6, 0.5, 1);
             spotLightL.position.set(-0.6, 0.7, 2.4);
             spotLightL.target.position.set(-1.0, 0, 10);
@@ -1576,7 +1610,6 @@
             spotLightR.target.position.set(1.0, 0, 10);
             group.add(spotLightR);
             group.add(spotLightR.target);
-            // -----------------------------------------
 
             egoGroup = group;
             scene.add(egoGroup);
@@ -1590,30 +1623,39 @@
             const headLightMat = new THREE.MeshBasicMaterial({ color: 0xffffcc }); 
 
             let body, cabin;
+            let size = { w: 0, h: 0, d: 0, y: 0 }; 
+            let arColor = CONFIG.arColorCar;
+            let arLabel = "CAR";
 
             if (type === 'bus') {
                 body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.4, 7.0), bodyMat); body.position.y = 1.2; carGroup.add(body);
                 cabin = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.8, 6.8), glassMat); cabin.position.set(0, 1.8, 0); carGroup.add(cabin);
                 const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 0.1), headLightMat); fLight.position.set(0, 0.8, 3.5); carGroup.add(fLight);
                 const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.8, -3.5); carGroup.add(rLight);
+                size = { w: 2.8, h: 2.6, d: 7.2, y: 1.2 };
+                arColor = CONFIG.arColorBus; arLabel = "BUS";
             } else if (type === 'truck') {
                 const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, 4.0), new THREE.MeshPhongMaterial({ color: 0xcccccc })); cargo.position.set(0, 1.6, -1.0); carGroup.add(cargo);
                 const cab = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.8, 1.5), bodyMat); cab.position.set(0, 1.2, 2.0); carGroup.add(cab);
                 const windShield = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 0.8), glassMat); windShield.position.set(0, 1.5, 2.4); carGroup.add(windShield);
                 const fLight = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 0.1), headLightMat); fLight.position.set(0, 0.6, 2.75); carGroup.add(fLight);
                 const rLight = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.6, -3.0); carGroup.add(rLight);
+                size = { w: 2.5, h: 2.9, d: 6.2, y: 1.45 };
+                arColor = CONFIG.arColorTruck; arLabel = "TRUCK";
             } else if (type === 'suv') {
                 body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 4.8), bodyMat); body.position.y = 0.7; carGroup.add(body);
                 cabin = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.7, 2.8), glassMat); cabin.position.set(0, 1.4, -0.2); carGroup.add(cabin);
                 const roof = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 2.9), bodyMat); roof.position.set(0, 1.8, -0.2); carGroup.add(roof);
                 const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.1), headLightMat); fLight.position.set(0, 0.8, 2.4); carGroup.add(fLight);
                 const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 0.1), tailLightMat); rLight.position.set(0, 0.8, -2.4); carGroup.add(rLight);
+                size = { w: 2.2, h: 1.9, d: 5.0, y: 0.95 };
             } else {
                 body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.7, 4.6), bodyMat); body.position.y = 0.5; carGroup.add(body);
                 cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.6, 2.2), glassMat); cabin.position.set(0, 1.0, -0.3); carGroup.add(cabin);
                 const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 2.3), bodyMat); roof.position.set(0, 1.35, -0.3); carGroup.add(roof);
                 const fLight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.1), headLightMat); fLight.position.set(0, 0.5, 2.3); carGroup.add(fLight);
                 const rLight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.1), tailLightMat); rLight.position.set(0, 0.5, -2.3); carGroup.add(rLight);
+                size = { w: 2.1, h: 1.5, d: 4.8, y: 0.75 };
             }
             const shadowLen = type === 'bus' ? 7.2 : (type === 'truck' ? 5.6 : (type === 'suv' ? 5.0 : 4.8));
             const shadow = new THREE.Mesh(
@@ -1621,24 +1663,31 @@
                 new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.6, transparent: true })
             );
             shadow.rotation.x = -Math.PI/2; shadow.position.y = 0.05; carGroup.add(shadow);
+            
+            const arBox = createARBoundingBox(size.w, size.h, size.d, arColor, arLabel);
+            arBox.position.y = size.y;
+            carGroup.add(arBox);
+
             return carGroup;
         }
 
         function createTraffic() {
+            // Revert to single lane but keep random order
             const trafficConfigs = [
-                { type: 'bus', color: 0x2255ff, speed: 0.00025 },    
-                { type: 'truck', color: 0xdddddd, speed: 0.00028 },  
-                { type: 'sedan', color: 0xff3333, speed: 0.00045 },  
-                { type: 'suv', color: 0x222222, speed: 0.00035 },    
-                { type: 'sedan', color: 0xcccccc, speed: 0.00042 },  
-                { type: 'truck', color: 0x334455, speed: 0.00028 }   
+                { type: 'bus', color: 0x2255ff, baseSpeed: 0.00025 },    
+                { type: 'truck', color: 0xdddddd, baseSpeed: 0.00028 },  
+                { type: 'sedan', color: 0xff3333, baseSpeed: 0.00045 },  
+                { type: 'suv', color: 0x222222, baseSpeed: 0.00035 },    
+                { type: 'sedan', color: 0xcccccc, baseSpeed: 0.00042 },  
+                { type: 'truck', color: 0x334455, baseSpeed: 0.00028 }   
             ];
 
             trafficConfigs.forEach((config, i) => {
                 const car = createVehicleDesign(config.type, config.color);
                 car.userData = { 
                     t: (i / trafficConfigs.length) + Math.random() * 0.05, 
-                    speed: config.speed,
+                    baseSpeed: config.baseSpeed,
+                    currentSpeed: config.baseSpeed,
                     laneOffset: -3.5 
                 };
                 const pt = curve.getPointAt(car.userData.t);
@@ -1671,6 +1720,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            
             if (egoGroup && egoGroup.userData.lidar) {
                 egoGroup.userData.lidar.rotation.y += 0.15;
             }
@@ -1692,27 +1742,98 @@
                     }
                 }
             }
+            
             trafficLights.forEach(l => {
                 l.redMat.emissiveIntensity = l.isRed ? 3.0 : 0.0; l.greenMat.emissiveIntensity = l.isRed ? 0.0 : 3.0;
+                if (l.isRed !== l.lastState) {
+                    updateTrafficLightLabel(l);
+                    l.lastState = l.isRed;
+                }
             });
             
             currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, (targetSpeed > currentSpeed) ? 0.005 : 0.1);
             
+            const remainingRatio = 1.0 - camPosIndex;
+            const distMeters = remainingRatio * totalCurveLength; 
+            const distKm = (distMeters / 1000).toFixed(1);
+
+            const distEl = document.getElementById('ui-dist');
+            if (distEl) {
+                if (distMeters < 100) {
+                    distEl.innerText = "ARRIVING";
+                    distEl.style.color = "#00ffcc";
+                } else {
+                    distEl.innerText = `${distKm} km`;
+                    distEl.style.color = "#ffffff";
+                }
+            }
+
+            const simSpeed = currentSpeed > 0.00001 ? currentSpeed : defaultSpeed; 
+            const framesLeft = remainingRatio / simSpeed;
+            const secondsLeft = framesLeft / 60; 
+            const now = new Date();
+            const arrivalTime = new Date(now.getTime() + secondsLeft * 1000);
+            let hours = arrivalTime.getHours();
+            let minutes = arrivalTime.getMinutes();
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            const etaEl = document.getElementById('ui-eta');
+            if (etaEl) {
+                etaEl.innerText = `${hours}:${minutes}`;
+            }
             if(document.getElementById('speed')) document.getElementById('speed').innerText = Math.floor((currentSpeed / defaultSpeed) * 60);
+
             if (pathLine.material.uniforms) {
                 pathLine.material.uniforms.uVisibleLength.value = THREE.MathUtils.lerp(pathLine.material.uniforms.uVisibleLength.value, (targetLight && targetLight.isRed && minDist < 0.07) ? Math.max(0.001, Math.min(0.08, minDist)) : 0.08, 0.05);
                 pathLine.material.uniforms.uProgress.value = camPosIndex + 0.002;
             }
+            
+            let opacity = 0;
+            if (camPosIndex > 0.96) {
+                opacity = (camPosIndex - 0.96) / 0.04;
+            } else if (camPosIndex < 0.04) {
+                opacity = 1 - (camPosIndex / 0.04);
+            }
+            if (fadeOverlay) fadeOverlay.style.opacity = opacity;
+
             camPosIndex += currentSpeed; 
             const cp = curve.getPointAt(camPosIndex); const lp = curve.getPointAt(Math.min(camPosIndex + 0.01, 1));
             egoGroup.position.copy(cp).add(new THREE.Vector3(3.5, 0.4, 0)); egoGroup.lookAt(lp.clone().add(new THREE.Vector3(3.5, 0.4, 0))); 
+            
             trafficCars.forEach(c => {
-                c.userData.t -= c.userData.speed; 
+                let mySpeed = c.userData.baseSpeed;
+                let closestDist = Infinity;
+                let carAhead = null;
+
+                trafficCars.forEach(other => {
+                    if (c === other) return;
+                    if (Math.abs(c.userData.laneOffset - other.userData.laneOffset) < 0.5) {
+                        let dist = c.userData.t - other.userData.t;
+                        if (dist < 0) dist += 1.0; 
+                        if (dist > 0 && dist < closestDist) {
+                            closestDist = dist;
+                            carAhead = other;
+                        }
+                    }
+                });
+
+                if (carAhead && closestDist < 0.06) { 
+                    mySpeed = Math.min(mySpeed, carAhead.userData.currentSpeed);
+                }
+
+                c.userData.currentSpeed = mySpeed;
+                c.userData.t -= c.userData.currentSpeed; 
+                
                 if(c.userData.t < 0) c.userData.t = 1;
-                c.position.copy(curve.getPointAt(c.userData.t)).add(new THREE.Vector3(-3.5, 0.3, 0));
-                const lookAtPoint = curve.getPointAt(Math.max(0, c.userData.t - 0.01)).add(new THREE.Vector3(-3.5, 0.3, 0));
+                
+                c.position.copy(curve.getPointAt(c.userData.t)).add(new THREE.Vector3(c.userData.laneOffset, 0, 0));
+                
+                let nextT = c.userData.t - 0.01;
+                if(nextT < 0) nextT += 1;
+                const lookAtPoint = curve.getPointAt(nextT).add(new THREE.Vector3(c.userData.laneOffset, 0, 0));
                 c.lookAt(lookAtPoint);
             });
+
             const fv = new THREE.Vector3().subVectors(lp, cp).normalize();
             camera.position.lerp(cp.clone().add(new THREE.Vector3(3.5, 0, 0)).add(fv.clone().multiplyScalar(-12).add(new THREE.Vector3(0, 6, 0))), 0.1);
             camera.lookAt(egoGroup.position.clone().add(fv.multiplyScalar(15))); 
