@@ -191,12 +191,33 @@
         @media (max-width: 768px) {
             .ui-layer { padding: 20px; }
             .speed-val { font-size: 3.5rem; }
-            .nav-box { display: block !important; margin-top: 10px; transform: scale(0.7); transform-origin: top left; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); padding: 10px; border-radius: 8px; }
+            
+            /* [수정 1] 모바일에서 Nav Box (Destination, Status) 숨김 */
+            .nav-box { display: none !important; }
+
             .bottom-bar { bottom: 20px; right: 20px; left: auto; display: flex; flex-direction: column; align-items: flex-end; }
             .data-grid { display: none; } 
             .side-widget-container { display: none !important; }
-            .fixed-nav-bar { width: 85%; bottom: 30px; top: auto; background: rgba(10, 15, 30, 0.9); padding: 10px; gap: 0; justify-content: space-evenly; }
-            .nav-btn { padding: 8px 12px; font-size: 0.75rem; }
+            
+            /* [수정 2] 모바일 메뉴바(Navbar) 최적화 */
+            .fixed-nav-bar { 
+                width: 95%; /* 너비 확보 */
+                bottom: 25px; 
+                top: auto; 
+                background: rgba(10, 15, 30, 0.9); 
+                padding: 5px; /* 패딩 축소 */
+                gap: 2px; /* 간격 축소 */
+                justify-content: space-between; 
+            }
+            .nav-btn { 
+                padding: 8px 6px; /* 좌우 패딩 대폭 축소 */
+                font-size: 0.65rem; /* 글자 크기 축소 */
+                letter-spacing: 0px; /* 자간 축소 */
+                flex: 1; /* 공간 균등 분배 */
+                text-align: center;
+                white-space: nowrap; /* 줄바꿈 방지 */
+            }
+
             .name-main { font-size: 2.8rem; letter-spacing: 2px; }
             .name-sub { font-size: 1.1rem; }
             .content-section { padding: 0 15px; margin-bottom: 80px; }
@@ -651,7 +672,7 @@
                             </div>
                         </div>
                         
-                        <div class="gallery-item" style="height: 30px;">
+                        <div class="gallery-item" style="height: 340px;">
                             <img src="images/E2E_baseline.png" alt="Performance Table" style="width: 100%; height: 280px; object-fit: cover; object-position: top;">
                             <div class="gallery-caption-overlay">
                                 <span>Closed-loop Evaluation</span>
@@ -973,10 +994,10 @@
             wireColor: 0x111111,
             benchColor: 0x664422,
             coneColor: 0xff6600,
-            arColorCar: 0x00ffcc,    
-            arColorBus: 0xff00ff,    
-            arColorTruck: 0xffff00,  
-            arColorTL: 0xff3300      
+            arColorCar: 0x00ffcc,     
+            arColorBus: 0xff00ff,     
+            arColorTruck: 0xffff00,   
+            arColorTL: 0xff3300       
         };
 
         let scene, camera, renderer;
@@ -1034,7 +1055,7 @@
             createBenches(); 
             createGuardrails();
             createOverheadWires(); 
-            createEgoCar();        
+            createEgoCar();         
             createTraffic();
             createPedestrians(); 
             createSpeedLines();
@@ -1355,37 +1376,48 @@
                 if(w > maxWidth) maxWidth = w;
             });
 
-            canvas.width = maxWidth + 60; 
+            // 여백(Padding) 설정
+            const padding = 40;
+            canvas.width = maxWidth + (padding * 2); 
             canvas.height = (lines.length * lineHeight) + 40;
             
             ctx.font = `bold ${fontHeight}px 'Rajdhani', sans-serif`;
             ctx.textBaseline = 'middle';
+            
+            // [핵심 변경] 왼쪽 정렬 설정
+            ctx.textAlign = 'left'; 
+            const startX = padding; // 텍스트 시작 X 좌표
 
             lines.forEach((line, i) => {
                 const y = (canvas.height / 2) - ((lines.length - 1) * lineHeight / 2) + (i * lineHeight);
                 
+                // Status 부분 컬러 처리 로직 (왼쪽 정렬 기준)
                 if (line.includes("Status: RED")) {
-                    ctx.textAlign = 'right';
+                    // "Status: " 그리기
                     ctx.fillStyle = '#eeeeee'; 
-                    ctx.fillText("Status: ", canvas.width / 2, y);
+                    ctx.fillText("Status: ", startX, y);
                     
-                    ctx.textAlign = 'left';
+                    // "Status: " 길이 측정 후 그 뒤에 "RED" 이어서 그리기
+                    const prefixWidth = ctx.measureText("Status: ").width;
+                    
                     ctx.fillStyle = '#ff3333'; 
-                    ctx.fillText("RED", canvas.width / 2, y);
+                    ctx.fillText("RED", startX + prefixWidth, y);
                 } 
                 else if (line.includes("Status: GREEN")) {
-                    ctx.textAlign = 'right';
+                    // "Status: " 그리기
                     ctx.fillStyle = '#eeeeee'; 
-                    ctx.fillText("Status: ", canvas.width / 2, y);
+                    ctx.fillText("Status: ", startX, y);
                     
-                    ctx.textAlign = 'left';
+                    // "Status: " 길이 측정 후 그 뒤에 "GREEN" 이어서 그리기
+                    const prefixWidth = ctx.measureText("Status: ").width;
+                    
                     ctx.fillStyle = '#00ff33'; 
-                    ctx.fillText("GREEN", canvas.width / 2, y);
+                    ctx.fillText("GREEN", startX + prefixWidth, y);
                 } 
                 else {
-                    ctx.textAlign = 'center';
+                    // 일반 텍스트 ("TRAFFIC LIGHT" 등)
                     ctx.fillStyle = colorStr; 
-                    ctx.fillText(line, canvas.width / 2, y);
+                    ctx.fillText(line, startX, y);
                 }
             });
 
@@ -1404,7 +1436,13 @@
              const margin = 0.4; 
              const geo = new THREE.BoxGeometry(w + margin, h + margin, d + margin);
              const edges = new THREE.EdgesGeometry(geo);
-             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8 }));
+             
+             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ 
+                 color: colorHex, 
+                 transparent: true, 
+                 opacity: 0.8,
+                 linewidth: 3  // 이 숫자를 높이면 두꺼워집니다 (기본값: 1)
+             }));
              
              line.userData.isDebugObject = true;
 
@@ -1420,6 +1458,7 @@
              return line;
         }
 
+        // [수정됨] 텍스트 위치를 아래쪽으로 변경
         function updateTrafficLightLabel(lightObj) {
             const statusText = lightObj.isRed ? "Status: RED" : "Status: GREEN";
             const fullText = "TRAFFIC LIGHT\n" + statusText;
@@ -1428,8 +1467,11 @@
                 lightObj.arBox.remove(lightObj.arBox.userData.labelSprite);
             }
             
-            const newLabel = createTextureLabel(fullText, '#ffffff', 1.2); 
-            newLabel.position.set(0, 1.0/2 + 2.0, 0);
+            const newLabel = createTextureLabel(fullText, '#ffffff', 1.0); 
+            
+            // x: 0 (가로 중앙), y: -1.8 (박스 아래쪽), z: 0
+            newLabel.position.set(4.0, -1.0, 1); 
+            
             newLabel.userData.isDebugObject = true; 
             
             lightObj.arBox.add(newLabel);
@@ -1674,12 +1716,12 @@
         function createTraffic() {
             // Revert to single lane but keep random order
             const trafficConfigs = [
-                { type: 'bus', color: 0x2255ff, baseSpeed: 0.00025 },    
-                { type: 'truck', color: 0xdddddd, baseSpeed: 0.00028 },  
-                { type: 'sedan', color: 0xff3333, baseSpeed: 0.00045 },  
-                { type: 'suv', color: 0x222222, baseSpeed: 0.00035 },    
-                { type: 'sedan', color: 0xcccccc, baseSpeed: 0.00042 },  
-                { type: 'truck', color: 0x334455, baseSpeed: 0.00028 }   
+                { type: 'bus', color: 0x2255ff, baseSpeed: 0.00025 },     
+                { type: 'truck', color: 0xdddddd, baseSpeed: 0.00028 },   
+                { type: 'sedan', color: 0xff3333, baseSpeed: 0.00045 },   
+                { type: 'suv', color: 0x222222, baseSpeed: 0.00035 },     
+                { type: 'sedan', color: 0xcccccc, baseSpeed: 0.00042 },   
+                { type: 'truck', color: 0x334455, baseSpeed: 0.00028 }    
             ];
 
             trafficConfigs.forEach((config, i) => {
