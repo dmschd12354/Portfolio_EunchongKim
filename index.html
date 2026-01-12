@@ -248,6 +248,21 @@
         .widget-yt:hover .cv-glass-panel { background: rgba(5, 8, 16, 0.9); border-color: rgba(255, 50, 50, 0.5); border-right-color: #ff0000; transform: translateX(-10px); box-shadow: -10px 0 30px rgba(255, 0, 0, 0.3); }
         .widget-yt:hover .cv-label-small { color: #ff0000; }
         .widget-yt:hover .cv-icon-box { color: #ff0000; }
+
+        /* --- LinkedIn Widget Style --- */
+        .widget-li { animation: slideInRight 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 0.9s forwards; }
+        .widget-li .cv-glass-panel { border-right: 3px solid #0077b5; } /* LinkedIn Blue color */
+        
+        .widget-li:hover .cv-glass-panel { 
+            background: rgba(5, 8, 16, 0.9); 
+            border-color: #0077b5; 
+            border-right-color: #0077b5; 
+            transform: translateX(-10px); 
+            box-shadow: -10px 0 30px rgba(0, 119, 181, 0.3); 
+        }
+        .widget-li:hover .cv-label-small { color: #0077b5; }
+        .widget-li:hover .cv-icon-box { color: #0077b5; }
+
         @keyframes slideInRight { 0% { opacity: 0; transform: translate(100px, 0); } 100% { opacity: 1; transform: translate(0, 0); } }
     </style>
     
@@ -309,6 +324,16 @@
                 <span class="cv-label-large">
                     @ennzzng
                     <i class="fab fa-youtube cv-icon-box"></i>
+                </span>
+            </div>
+        </a>
+
+        <a href="https://www.linkedin.com/in/eunchong-kim-4a5015206/" target="_blank" class="side-widget widget-li">
+            <div class="cv-glass-panel">
+                <span class="cv-label-small">Professional Profile</span>
+                <span class="cv-label-large">
+                    LinkedIn
+                    <i class="fab fa-linkedin cv-icon-box"></i>
                 </span>
             </div>
         </a>
@@ -581,6 +606,9 @@
                         </a>
                         <a href="https://youtube.com/@ennzzng?si=zuh2NKhMAPaVFQ0Y" target="_blank" class="action-btn" style="border: 1px solid #cc0000; color: #fff; background: rgba(204, 0, 0, 0.1);">
                             <i class="fab fa-youtube"></i> Youtube
+                        </a>
+                        <a href="https://www.linkedin.com/in/본인아이디" target="_blank" class="action-btn" style="border: 1px solid #0077b5; color: #fff; background: rgba(0, 119, 181, 0.1);">
+                            <i class="fab fa-linkedin"></i> LinkedIn
                         </a>
                     </div>
                 </div>
