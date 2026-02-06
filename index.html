@@ -188,6 +188,81 @@
         .contact-link:hover { color: #fff; border-bottom-style: solid; text-shadow: 0 0 8px var(--ego-color); }
         .footer-spacer { height: 200px; }
 
+        /* [핵심] 이름 텍스트를 감싸는 컨테이너 */
+        /* 이름이 화면 중앙에 고정되도록 기준점을 잡습니다 */
+        .name-wrapper {
+            position: relative;
+            display: inline-block; /* 텍스트 너비만큼만 영역을 차지하게 함 */
+        }
+
+        /* [수정] 전문연구요원 배지 (Absolute Positioning 적용 + 오른쪽 여백 추가) */
+        .status-badge {
+            /* 이름 컨테이너(name-wrapper) 기준으로 위치를 잡습니다 */
+            position: absolute;
+            left: 100%; /* 이름의 오른쪽 끝에 위치 */
+            top: 55%;   /* 수직 위치 중앙 보정 */
+            transform: translateY(-50%); /* 정확한 수직 중앙 정렬 */
+            
+            margin-left: 60px; /* 이름과 배지 사이의 간격 */
+            white-space: nowrap; /* 줄바꿈 방지 */
+            
+            /* 디자인: 골드 테마 */
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            
+            background: rgba(255, 215, 0, 0.1); 
+            border: 1px solid #FFD700;
+            color: #FFD700;
+            
+            border-radius: 50px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+            backdrop-filter: blur(4px);
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge:hover {
+            background: rgba(255, 215, 0, 0.25);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FFD700;
+            animation: pulse-dot-gold 2s infinite;
+        }
+
+        @keyframes pulse-dot-gold {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+            70% { opacity: 1; box-shadow: 0 0 0 8px rgba(255, 215, 0, 0); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        /* 모바일 대응: 화면이 좁아지면 배지가 잘리므로 위치 변경 */
+        @media (max-width: 1100px) {
+            .name-wrapper {
+                display: block; /* 블록 요소로 변경 */
+            }
+            .status-badge {
+                position: relative; /* 고정 위치 해제 */
+                left: auto;
+                top: auto;
+                transform: none;
+                margin-left: 0;
+                margin-top: 15px; /* 이름 아래로 이동 */
+                display: inline-flex;
+            }
+        }
+
         @media (max-width: 768px) {
             .ui-layer { padding: 20px; }
             .speed-val { font-size: 3.5rem; }
@@ -349,7 +424,16 @@
     </nav>
     
     <div class="top-center-container" id="hero-header">
-        <div class="name-main">EUNCHONG KIM</div>
+        
+        <div class="name-wrapper">
+            <div class="name-main">EUNCHONG KIM</div>
+            
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                전문연구요원 편입 희망 (본인 T.O 보유)
+            </div>
+        </div>
+
         <div class="name-sub">AI Researcher & Developer (Autonomous Driving / Robotics)</div>
     </div>
 
@@ -373,7 +457,7 @@
                 <div class="cv-item">
                     <div class="cv-header">
                         <span class="cv-main-text">UNIST (Ulsan National Institute of Science and Technology)</span>
-                        <span class="cv-date">Exp. Feb. 2026</span>
+                        <span class="cv-date">Feb. 2026</span>
                     </div>
                     <span class="cv-sub-text">M.S. in Artificial Intelligence</span>
                     <div class="cv-desc">
@@ -481,19 +565,10 @@
                 <div class="cv-item">
                     <div class="cv-header">
                         <span class="cv-main-text">Deployment-Oriented End-to-End Autonomous Driving: Enhancing Closed-Loop Stability with a Lightweight Camera-Only Framework</span>
-                        <span class="cv-date">Under Review</span>
+                        <span class="cv-date">Accepted</span>
                     </div>
                     <div class="cv-desc">
-                        Submitted to <strong>IEEE IV 2026 (1st Author)</strong>.
-                    </div>
-                </div>
-                <div class="cv-item">
-                    <div class="cv-header">
-                        <span class="cv-main-text">Rule-Conformant End-to-End Autonomous Driving: Safer Intersection Behavior via Enforced Cue Representation</span>
-                        <span class="cv-date">Under Review</span>
-                    </div>
-                    <div class="cv-desc">
-                        Submitted to <strong>IEEE IV 2026 (1st Author)</strong>.
+                        Accepted to <strong>IEEE IV 2026 (1st Author)</strong>.
                     </div>
                 </div>
                 <div class="cv-item">
@@ -1022,10 +1097,10 @@
             wireColor: 0x111111,
             benchColor: 0x664422,
             coneColor: 0xff6600,
-            arColorCar: 0x00ffcc,     
-            arColorBus: 0xff00ff,     
-            arColorTruck: 0xffff00,   
-            arColorTL: 0xff3300       
+            arColorCar: 0x00ffcc,      
+            arColorBus: 0xff00ff,      
+            arColorTruck: 0xffff00,    
+            arColorTL: 0xff3300        
         };
 
         let scene, camera, renderer;
@@ -1083,7 +1158,7 @@
             createBenches(); 
             createGuardrails();
             createOverheadWires(); 
-            createEgoCar();         
+            createEgoCar();           
             createTraffic();
             createPedestrians(); 
             createSpeedLines();
@@ -1744,12 +1819,12 @@
         function createTraffic() {
             // Revert to single lane but keep random order
             const trafficConfigs = [
-                { type: 'bus', color: 0x2255ff, baseSpeed: 0.00025 },     
-                { type: 'truck', color: 0xdddddd, baseSpeed: 0.00028 },   
-                { type: 'sedan', color: 0xff3333, baseSpeed: 0.00045 },   
-                { type: 'suv', color: 0x222222, baseSpeed: 0.00035 },     
-                { type: 'sedan', color: 0xcccccc, baseSpeed: 0.00042 },   
-                { type: 'truck', color: 0x334455, baseSpeed: 0.00028 }    
+                { type: 'bus', color: 0x2255ff, baseSpeed: 0.00025 },      
+                { type: 'truck', color: 0xdddddd, baseSpeed: 0.00028 },    
+                { type: 'sedan', color: 0xff3333, baseSpeed: 0.00045 },    
+                { type: 'suv', color: 0x222222, baseSpeed: 0.00035 },      
+                { type: 'sedan', color: 0xcccccc, baseSpeed: 0.00042 },    
+                { type: 'truck', color: 0x334455, baseSpeed: 0.00028 }     
             ];
 
             trafficConfigs.forEach((config, i) => {
