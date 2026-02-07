@@ -430,7 +430,7 @@
             
             <div class="status-badge">
                 <span class="status-dot"></span>
-                전문연구요원 편입 희망 (본인 T.O 보유)
+                전문연구요원 편입 희망 (보충역: 본인 T.O 보유)
             </div>
         </div>
 
@@ -486,6 +486,8 @@
                 </div>
             </div>
         </section>
+
+        
 
         <section class="content-section compact-header" id="experience">
             <div class="cv-card compact-card">
@@ -565,7 +567,6 @@
                 <div class="cv-item">
                     <div class="cv-header">
                         <span class="cv-main-text">Deployment-Oriented End-to-End Autonomous Driving: Enhancing Closed-Loop Stability with a Lightweight Camera-Only Framework</span>
-                        <span class="cv-date">Accepted</span>
                     </div>
                     <div class="cv-desc">
                         Accepted to <strong>IEEE IV 2026 (1st Author)</strong>.
@@ -714,6 +715,12 @@
                 badge: "WINNER",
                 video: "https://www.youtube.com/watch?v=HlTL7tkNh6M",
                 details: `
+                    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                        <div style="background: rgba(150, 150, 150, 0.95); padding: 15px 40px; border-radius: 12px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);">
+                            <img src="images/FAST_logo.PNG" alt="FAST Team Logo" style="height: 120px; width: auto; display: block;">
+                        </div>
+                    </div>
+
                     <h4>Overview</h4>
                     <p>Development of a Camera-Only Deployment-Oriented End-to-End Autonomous Driving Model and the entire pipeline from data collection (in MORAI sim.) to closed-loop validation.</p>
                     
@@ -767,6 +774,30 @@
                             </div>
                         </div>
 
+                        <div class="gallery-item" style="padding-bottom: 60px; background: white;"> 
+                            <img src="images/dagger.svg" alt="DAgger Algorithm Pipeline" 
+                                style="width: 100%; height: auto; max-height: 400px; object-fit: contain; padding: 20px; box-sizing: border-box; display: block;">
+                            <div class="gallery-caption-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);">
+                                <span style="color: var(--ego-color);">Methodology</span>
+                                Imitation Learning with DAgger Pipeline
+                            </div>
+                        </div>
+                        
+                        <div class="gallery-item" style="height: 450px;">
+                            <div style="display: flex; height: 100%; width: 100%;">
+                                <div style="flex: 1; border-right: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;">
+                                    <img src="images/expert1.png" alt="Expert Data 1" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="flex: 1; position: relative; overflow: hidden;">
+                                    <img src="images/expert2.png" alt="Expert Data 2" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div class="gallery-caption-overlay">
+                                <span style="color: var(--primary-color);">Data Collection</span>
+                                Expert Driving Model in Action (Lane Keeping & Intersection)
+                            </div>
+                        </div>
+
                         <div class="gallery-item">
                             <img src="images/E2E_model_output.png" alt="Model Prediction" style="width: 100%; height: 100%; object-fit: cover;">
                             <div class="gallery-caption-overlay">
@@ -775,7 +806,7 @@
                             </div>
                         </div>
                         
-                        <div class="gallery-item" style="height: 340px;">
+                        <div class="gallery-item" style="height: 360px;">
                             <img src="images/E2E_baseline.png" alt="Performance Table" style="width: 100%; height: 280px; object-fit: cover; object-position: top;">
                             <div class="gallery-caption-overlay">
                                 <span>Closed-loop Evaluation</span>
