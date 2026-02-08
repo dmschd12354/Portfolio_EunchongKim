@@ -91,6 +91,16 @@
             z-index: 100; pointer-events: auto;
             display: flex; justify-content: center; align-items: center;
             gap: 5px; padding: 8px 10px;
+
+            /* [핵심 수정] 줄바꿈 방지 및 너비 자동 조절 */
+            flex-wrap: nowrap;       /* 아이템이 다음 줄로 떨어지는 것 방지 */
+            white-space: nowrap;     /* 텍스트 내부 줄바꿈 방지 */
+            width: fit-content;      /* 내용물 길이에 맞춰 컨테이너 너비 확장 */
+            max-width: 95vw;         /* 화면 너비를 넘어가면 잘리지 않도록 제한 */
+
+            /* 모바일 대응: 메뉴가 너무 많으면 가로 스크롤 허용 (선택 사항) */
+            overflow-x: auto;
+
             background: rgba(10, 15, 30, 0.65);
             backdrop-filter: blur(16px) saturate(180%);
             border: 1px solid var(--glass-border);
@@ -98,11 +108,18 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 20px rgba(0, 255, 204, 0.05);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
+        .fixed-nav-bar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
         .nav-btn {
             text-decoration: none; color: #b0b5c0; font-size: 0.85rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 1px; padding: 10px 24px;
             border-radius: 100px; border: none; background: transparent;
             transition: all 0.3s ease;
+
+            /* [핵심 수정] 버튼 텍스트 줄바꿈 방지 */
+            white-space: nowrap; 
+            flex-shrink: 0; /* 공간이 좁아도 버튼이 찌그러지지 않게 함 */
         }
         .nav-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); text-shadow: 0 0 8px rgba(255,255,255,0.5); }
         .nav-btn.active { color: #000; background: var(--ego-color); font-weight: 800; box-shadow: 0 0 15px var(--ego-color); }
@@ -420,6 +437,7 @@
         <a href="#experience" class="nav-btn">Experiences</a>
         <a href="#publications" class="nav-btn">Publications</a>
         <a href="#skills" class="nav-btn">Skills</a>
+        <a href="#global-research" class="nav-btn">Global Tech Tour</a>
         <a href="#about" class="nav-btn">Contact</a>
     </nav>
     
@@ -632,6 +650,28 @@
                                 <div style="width: 30%; height: 100%; background: #888; border-radius: 2px;"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section" id="global-research">
+            <h2 class="section-title" style="color: #ff6666; border-color: #ff4444;">GLOBAL AD Tech Tour</h2>
+            
+            <div class="cv-card" onclick="openGlobalResearchModal()" style="border: 1px solid rgba(255, 80, 80, 0.4); cursor: pointer;">
+
+                <div class="cv-item" style="border: none; margin: 0; padding: 0;">
+                    <div class="cv-header">
+                        <span class="cv-main-text" style="color: #ffaaaa;">Global Autonomous Driving Tech Tour</span>
+                        <span class="cv-date">Nov. 2025</span>
+                    </div>
+                    <span class="cv-sub-text" style="color: #ff6666;">End-to-end AV test drive</span>
+                    
+                    <div class="cv-summary" style="margin-top: 15px; color: #ddd; line-height: 1.5;">
+                        <div style="margin-bottom: 5px; font-weight: 700; color: #fff;">
+                            📍 Shanghai & Guangzhou
+                        </div>
+                        Comparative Analysis of End-to-End AD Systems in Mass-Produced Vehicles within Complex Urban Scenarios.
                     </div>
                 </div>
             </div>
@@ -998,6 +1038,107 @@
             },
             
         ];
+
+        // --- Global Research Modal Data (Updated) ---
+        const globalResearchData = {
+            title: "Global Autonomous Driving Tech Tour",
+            date: "Nov. 2025",
+            role: "Field Research (Hyundai Motor Group AD Challenge Winner Privilege)",
+            details: `
+                <div class="cv-desc">
+                    <p style="margin-bottom: 25px; color: #ddd; line-height: 1.6;">
+                        Conducted intensive field research in China's autonomous driving innovation hubs, <strong>Shanghai and Guangzhou</strong>. 
+                        <br><br>
+                        Experienced the <strong>End-to-End autonomous driving solutions</strong> applied to mass-produced vehicles. 
+                        Through test drives, I analyzed the <strong>technical disparities and distinct strengths</strong> of each company's system in edge cases.
+                    </p>
+
+                    <h4 style="color: var(--primary-color); border-left: 3px solid var(--primary-color); padding-left: 10px; margin-bottom: 15px;">
+                        Test Driven Vehicles (Mass-Production Models)
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 35px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            AITO M9
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            NIO ES8
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            GWM Wey Blue Mountain
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            BYD Denza N9
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            Xiaomi YU7
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            Tesla FSD
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            Li Auto i8
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-align: center; color: #eee; font-weight: 600;">
+                            Xpeng P7
+                        </div>
+                    </div>
+
+                    <h4 style="color: #ffaaaa; margin-top: 40px; margin-bottom: 15px;">In-Vehicle UX/UI</h4>
+                    <div class="gallery-grid" style="grid-template-columns: 1fr; gap: 15px;">
+                        <div class="gallery-item" style="height: auto; border-color: rgba(255, 80, 80, 0.4); background: transparent;">
+                            <img src="images/차량내부.png" alt="In-Vehicle Display Combined" style="width: 100%; height: auto; object-fit: contain; display: block;">
+                            <div class="gallery-caption-overlay"><span style="color: #ff6666;">In-Vehicle</span>Navigation, Perception, Cockpit UI</div>
+                        </div>
+                    </div>
+
+                    <h4 style="color: #ffaaaa; margin-top: 40px; margin-bottom: 15px;">Test Vehicles</h4>
+                    <div class="gallery-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="gallery-item" style="height: 250px; border-color: rgba(255, 80, 80, 0.4);">
+                            <img src="images/차량외부2.jpg" alt="Vehicle Exterior 2" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div class="gallery-caption-overlay"><span style="color: #ff6666;">Test Drive Vehicle</span></div>
+                        </div>
+                    </div>
+
+                    <h4 style="color: #ffaaaa; margin-top: 40px; margin-bottom: 15px;">Tech Tour Group</h4>
+                    <div class="gallery-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                         <div class="gallery-item" style="height: 300px; border-color: rgba(255, 80, 80, 0.4);">
+                            <img src="images/단체사진1.jpg" alt="Team Photo 1" style="width: 100%; height: 100%; object-fit: cover; object-position: center 85%;">
+                        </div>
+                         <div class="gallery-item" style="height: 450px; border-color: rgba(255, 80, 80, 0.4);">
+                            <img src="images/단체사진2.jpg" alt="Team Photo 2" style="width: 100%; height: 100%; object-fit: cover; object-position: center 65%;">
+                        </div>
+                         <div class="gallery-item" style="height: 350px; border-color: rgba(255, 80, 80, 0.4);">
+                            <img src="images/단체사진3.jpg" alt="Team Photo 3" style="width: 100%; height: 100%; object-fit: cover; object-position: center 90%;">
+                        </div>
+                         <div class="gallery-item" style="height: 400px; border-color: rgba(255, 80, 80, 0.4);">
+                            <img src="images/단체사진4.jpg" alt="Team Photo 4" style="width: 100%; height: 100%; object-fit: cover; object-position: center 65%;">
+                            <div class="gallery-caption-overlay"><span style="color: #ff6666;">Hyundai Motor Group Tech Tour Team</span></div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        function openGlobalResearchModal() {
+            const modal = document.getElementById('projectModal');
+            const modalBody = document.getElementById('modal-body-content');
+            
+            modalBody.innerHTML = `
+                <div class="cv-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px;">
+                    <div class="modal-title" style="color: #ff6666;">${globalResearchData.title}</div>
+                    <div class="cv-date">${globalResearchData.date}</div>
+                </div>
+                <span class="modal-role" style="color: #ffaaaa;">${globalResearchData.role}</span>
+                <div class="modal-body">
+                    ${globalResearchData.details}
+                </div>
+            `;
+            
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        
 
         const projectContainer = document.getElementById('project-list');
         projects.forEach((proj, index) => {
